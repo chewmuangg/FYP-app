@@ -9,17 +9,32 @@
         android:id="@+id/navigation_home"
         android:name="com.example.fypapp.ui.home.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_navigation_home_to_analysisFragment"
+            app:destination="@id/analysisFragment" />
+    </fragment>
 
     <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="com.example.fypapp.ui.dashboard.DashboardFragment"
+        android:id="@+id/navigation_history"
+        android:name="com.example.fypapp.ui.history.HistoryFragment"
         android:label="@string/title_history"
-        tools:layout="@layout/fragment_dashboard" />
+        tools:layout="@layout/fragment_history" />
 
     <fragment
         android:id="@+id/navigation_notifications"
         android:name="com.example.fypapp.ui.notifications.NotificationsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_notifications" />
+
+    <fragment
+        android:id="@+id/analysisFragment"
+        android:name="com.example.fypapp.ui.home.AnalysisFragment"
+        android:label="fragment_analysis"
+        tools:layout="@layout/fragment_analysis" >
+        <action
+            android:id="@+id/action_analysisFragment_to_navigation_home"
+            app:destination="@id/navigation_home" />
+    </fragment>
+
 </navigation>
