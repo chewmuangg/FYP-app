@@ -4,27 +4,31 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
-import androidx.navigation.Navigation
-import com.example.fypapp.R
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.AnalysisActivity
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 class HomeFragment : Fragment() {
 
@@ -36,8 +40,37 @@ class HomeFragment : Fragment() {
 
     private val sharedViewModel: SharedViewModel by viewModels()
 
+    // Request codes for camera and gallery permissions
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001
     private val GALLERY_PERMISSION_REQUEST_CODE = 1002
+
+    // URI to store the current photo captured by the camera
+    private var currentPhotoUri: Uri? = null
+
+    // Current captured image filename
+    private lateinit var imageFileName: String
+
+    // ActivityResultLauncher for handling camera intent result
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                // Save the image to external storage before launching the Analysis Activity
+                saveImageToStorage(currentPhotoUri)
+
+                // Handle the captured image from the camera
+                startAnalysisActivity(currentPhotoUri)
+            }
+        }
+
+    // ActivityResultLauncher for handling gallery intent result
+    private val galleryLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                // Handle the selected image from the gallery
+                val imageUri: Uri? = result.data?.data
+                startAnalysisActivity(imageUri)
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -96,7 +129,7 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 
-    // Checks if camera permission is enabled
+    // Checks if camera permission is granted
     private fun checkCameraPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             requireContext(),
@@ -104,7 +137,7 @@ class HomeFragment : Fragment() {
         ) ==  PackageManager.PERMISSION_GRANTED
     }
 
-    // Request for enabling camera permission
+    // Request camera permission
     private fun requestCameraPermission() {
         ActivityCompat.requestPermissions(
             requireActivity(),
@@ -113,7 +146,7 @@ class HomeFragment : Fragment() {
         )
     }
 
-    // Checks if gallery permission is enabled
+    // Checks if gallery permission is granted
     private fun checkGalleryPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             requireContext(),
@@ -121,7 +154,7 @@ class HomeFragment : Fragment() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Request for enabling gallery permission
+    // Request gallery permission
     private fun requestGalleryPermission() {
         ActivityCompat.requestPermissions(
             requireActivity(),
@@ -130,35 +163,76 @@ class HomeFragment : Fragment() {
         )
     }
 
-    // function to launch camera
+    // Function to launch camera intent
     private fun openCamera() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
-        if (takePictureIntent.resolveActivity(requireActivity().packageManager) != null) {
-            val imageUri = createImageUri()
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-            startActivityForResult(takePictureIntent, CAMERA_PERMISSION_REQUEST_CODE)
+        val photoFile: File? = createImageFile()
+        photoFile?.let {
+            currentPhotoUri = FileProvider.getUriForFile(
+                requireContext(),
+                "com.example.fypapp.fileprovider",
+                it
+            )
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri)
+            // Launch the camera intent using the ActivityResultLauncher
+            cameraLauncher.launch(takePictureIntent)
         }
     }
 
-    // function to launch gallery
+    // Function to launch gallery intent
     private fun openGallery() {
         val galleryIntent = Intent(Intent.ACTION_PICK)
         galleryIntent.type = "image/*"
-        startActivityForResult(galleryIntent, GALLERY_PERMISSION_REQUEST_CODE)
+        // Launch the gallery intent using the ActivityResultLauncher
+        galleryLauncher.launch(galleryIntent)
     }
 
-    private fun createImageUri(): Uri {
-        val imageFile = File(requireContext().filesDir, "camera_photos.jpg")
-        return FileProvider.getUriForFile(
-            requireContext(),
-            "com.example.fypapp.fileprovider",
-            imageFile
-        )
+    // Create a temporary image file
+    private fun createImageFile(): File? {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        imageFileName = "FYP_img_${timeStamp}_"
+        val storageDir: File? = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(imageFileName, ".jpg", storageDir)
+    }
+
+    // Save image file to external storage (gallery)
+    private fun saveImageToStorage(imageUri: Uri?) {
+        try {
+            imageUri?.let {
+                // Open an input stream to read from the content URI
+                val inputStream: InputStream? = requireContext().contentResolver.openInputStream(it)
+
+                // Prepare the ContentValues to insert the image into MediaStore
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, "$imageFileName.jpg")
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                }
+
+                // Use the MediaStore.Images.Media content URI to insert the image
+                val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                val resolver = requireContext().contentResolver
+                val insertUri = resolver.insert(contentUri, contentValues)
+
+                // Open an output stream to write to the content URI
+                insertUri?.let { uri->
+                    resolver.openOutputStream(uri)?.use { outputStream ->
+                        inputStream?.copyTo(outputStream)
+                    }
+                }
+
+                // Close the input stream
+                inputStream?.close()
+
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // Handle the exception as needed
+        }
     }
 
     // Handle the result of the Camera and Gallery Intents
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    /*override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
@@ -180,7 +254,7 @@ class HomeFragment : Fragment() {
             }
 
         }
-    }
+    }*/
 
     /* Handle the results of the permission requests.
      * If granted, calls the corresponding method openCamera() or openGallery().
@@ -210,7 +284,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Launch Analysis Activity
+    // Launch Analysis Activity with the provided image URI
     private fun startAnalysisActivity(imageUri: Uri?) {
         val intent = Intent(requireContext(), AnalysisActivity::class.java)
         intent.putExtra("imageUri", imageUri)
