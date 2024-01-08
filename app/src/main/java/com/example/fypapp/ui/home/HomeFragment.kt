@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.AnalysisActivity
+import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -289,5 +291,16 @@ class HomeFragment : Fragment() {
         val intent = Intent(requireContext(), AnalysisActivity::class.java)
         intent.putExtra("imageUri", imageUri)
         startActivity(intent)
+    }
+
+    // Successfully configured OpenCV into project
+    companion object {
+        init {
+            if (OpenCVLoader.initDebug()) {
+                Log.d("Check", "OpenCv configured successfully")
+            } else {
+                Log.d("Check", "OpenCv configuration failed")
+            }
+        }
     }
 }
