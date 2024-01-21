@@ -73,17 +73,21 @@ class AnalysisActivity : AppCompatActivity() {
 
         // Convert the image to HSV colour space
         val hsvMat = Mat()
-        Imgproc.cvtColor(originalMat, hsvMat, Imgproc.COLOR_BGR2HSV)
+        Imgproc.cvtColor(originalMat, hsvMat, Imgproc.COLOR_RGB2HSV)
 
         // Define the colour range for the circles
-        val lowerThreshold = Scalar(120.0, 50.0, 50.0)
-        val upperThreshold = Scalar(180.0, 255.0, 255.0)
+        val lowerThreshold = Scalar(100.0, 50.0, 25.0)
+        val upperThreshold = Scalar(155.0, 255.0, 255.0)
 
         // Threshold the image to get a binary mask
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
-        // Find circles using Hough Circle Transform
+        // Convert the thresholded Mat back to Bitmap
+        val resultBitmap = Bitmap.createBitmap(thresholdMat.cols(), thresholdMat.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(thresholdMat, resultBitmap)
+
+        /*// Find circles using Hough Circle Transform
         val circles = Mat()
         Imgproc.HoughCircles(thresholdMat, circles, Imgproc.CV_HOUGH_GRADIENT, 1.0, 20.0, 100.0, 30.0, 10, 400)
 
@@ -113,7 +117,7 @@ class AnalysisActivity : AppCompatActivity() {
 
         // Convert the resultMat back to bitmap
         val resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(resultMat, resultBitmap)
+        Utils.matToBitmap(resultMat, resultBitmap)*/
 
         // Release Mats to free up memory
         originalMat.release()
