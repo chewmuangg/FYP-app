@@ -56,10 +56,11 @@ class HomeFragment : Fragment() {
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
+                // Handle the captured image from the camera
                 // Save the image to external storage before launching the Analysis Activity
                 saveImageToStorage(currentPhotoUri)
 
-                // Handle the captured image from the camera
+                // Launch the Analysis page
                 startAnalysisActivity(currentPhotoUri)
             }
         }
@@ -70,6 +71,8 @@ class HomeFragment : Fragment() {
             if (result.resultCode == Activity.RESULT_OK) {
                 // Handle the selected image from the gallery
                 val imageUri: Uri? = result.data?.data
+
+                // Launch the Analysis page
                 startAnalysisActivity(imageUri)
             }
         }
@@ -293,14 +296,4 @@ class HomeFragment : Fragment() {
         startActivity(intent)
     }
 
-    // Successfully configured OpenCV into project
-    companion object {
-        init {
-            if (OpenCVLoader.initDebug()) {
-                Log.d("Check", "OpenCv configured successfully")
-            } else {
-                Log.d("Check", "OpenCv configuration failed")
-            }
-        }
-    }
 }
