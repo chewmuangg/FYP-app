@@ -123,8 +123,8 @@ class AnalysisActivity : AppCompatActivity() {
         originalMat.release()
         hsvMat.release()
         thresholdMat.release()
-        circles.release()
-        resultMat. release()
+        //circles.release()
+        //resultMat. release()
 
         return resultBitmap
     }
