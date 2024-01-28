@@ -11,10 +11,7 @@ import com.bumptech.glide.Glide
 import com.example.fypapp.databinding.ActivityAnalysisBinding
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
-import org.opencv.core.Core
-import org.opencv.core.Mat
-import org.opencv.core.Point
-import org.opencv.core.Scalar
+import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.InputStream
 
@@ -83,41 +80,77 @@ class AnalysisActivity : AppCompatActivity() {
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
-        // Convert the thresholded Mat back to Bitmap
-        val resultBitmap = Bitmap.createBitmap(thresholdMat.cols(), thresholdMat.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(thresholdMat, resultBitmap)
+        // Bitwise AND operation
+//        val resultMat = Mat()
+//        Core.bitwise_and(originalMat, originalMat, resultMat, thresholdMat)
 
-        /*// Find circles using Hough Circle Transform
-        val circles = Mat()
-        Imgproc.HoughCircles(thresholdMat, circles, Imgproc.CV_HOUGH_GRADIENT, 1.0, 20.0, 100.0, 30.0, 10, 400)
+        /* Start of contour detection that kinda works */
 
-        // Draw circles and number the circles on the image
-        val resultMat = originalMat.clone()
-        for (i in 0 until circles.cols()) {
-            val circle = circles.get(0, i)
-            if (circle != null) {
-                val center = Point(circle[0], circle[1])
-                val radius = circle[2].toInt()
+        // Find contours on the resulting image
+        val contours = ArrayList<MatOfPoint>()
+        val hierarchy = Mat()
+        Imgproc.findContours(thresholdMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
-                // Draw a circle on the result image
-                Imgproc.circle(resultMat, center, radius, Scalar(0.0, 255.0, 0.0), 4)
+        // Log the number of contours found
+        val numberOfContours = contours.size
+        Log.d("ContourDetection", "Number of contours found: $numberOfContours")
 
-                // Draw the circle number
-                Imgproc.putText(
-                    resultMat,
-                    (i + 1).toString(),
-                    Point(center.x - 10, center.y - 10),
-                    Imgproc.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    Scalar(255.0, 0.0, 0.0),
-                    2
-                )
+        // Iterate through contours and filter by area
+        val minContourArea = 10000.0
+        val filteredContours = ArrayList<MatOfPoint>()
+
+        for (contour in contours) {
+            val contourArea = Imgproc.contourArea(contour)
+
+            if (contourArea > minContourArea) {
+                filteredContours.add(contour)
             }
+        }
+
+        // Log the number of filtered contours
+        val numberOfFilteredContours = filteredContours.size
+        Log.d("ContourDetection", "Number of filtered contours: $numberOfFilteredContours")
+
+        // Visualise the filtered contours on the binary image
+        val contourImage = Mat.zeros(originalMat.size(), CvType.CV_8UC4)
+        Imgproc.drawContours(contourImage, filteredContours, -1, Scalar(0.0, 255.0, 0.0, 255.0), 2)
+
+        // Convert the result Mat back to Bitmap
+        val resultBitmap = Bitmap.createBitmap(contourImage.cols(), contourImage.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(contourImage, resultBitmap)
+
+        /* End of contour detection */
+
+        // Convert the thresholded Mat back to Bitmap
+//        val resultBitmap = Bitmap.createBitmap(thresholdMat.cols(), thresholdMat.rows(), Bitmap.Config.ARGB_8888)
+//        Utils.matToBitmap(thresholdMat, resultBitmap)
+
+        /* Using Hough Circle Transform */
+        // Apply Gaussian Blur to reduce noise and improve circle detection
+        //Imgproc.GaussianBlur(thresholdMat, thresholdMat, Size(9.0, 9.0), 2.0, 2.0)
+
+        // Find circles using Hough Circle Transform
+        /*val circles = Mat()
+        Imgproc.HoughCircles(thresholdMat, circles, Imgproc.CV_HOUGH_GRADIENT, 1.0, 20.0, 100.0, 30.0, 5, 100)
+
+        // Log the number of circles found
+        val numberOfCircles = circles.cols()
+        Log.d("CircleDetection", "Number of circles found: $numberOfCircles")
+
+        // Draw circles on the original image
+        val resultMat = originalMat.clone()
+        for (i in 0 until numberOfCircles) {
+            val circleCenter = Point(circles[0, i][0], circles[0, i][1])
+            val radius = circles[0, i][2].toInt()
+
+            Imgproc.circle(resultMat, circleCenter, radius, Scalar(0.0, 255.0, 0.0), 8)
         }
 
         // Convert the resultMat back to bitmap
         val resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(resultMat, resultBitmap)*/
+
+        /*End of Hough Circle Transform*/
 
         // Release Mats to free up memory
         originalMat.release()
