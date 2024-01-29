@@ -6,8 +6,9 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageView
-import com.bumptech.glide.Glide
+import android.widget.TextView
 import com.example.fypapp.databinding.ActivityAnalysisBinding
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -36,32 +37,40 @@ class AnalysisActivity : AppCompatActivity() {
         val inputStream: InputStream? = contentResolver.openInputStream(imageUri!!)
         val bitmap: Bitmap? = BitmapFactory.decodeStream(inputStream)
 
-        // Perform Image Processing with OpenCV
-        //val processedBitmap: Bitmap? = performImageProcessing(bitmap)
-        val processedBitmap: Bitmap? = processImage(bitmap)
+        // Perform Image Processing with OpenCV upon clicking onto the "Process" Button
+        val processButton : Button = binding.processBtn
+        processButton.setOnClickListener {
+            // Call the Image Processing function
+            val result = processImage(bitmap)
 
-        // Display the processed greyscale Bitmap in an ImageView
-        val processedImage : ImageView = binding.processedImageView
-        processedImage.setImageBitmap(processedBitmap)
+            // Retrieve the processed bitmap and list of intensity values
+            val processedBitmap: Bitmap? = result.first
+            val meanIntensityList = result.second
 
-        // Load and display the image using Glide
-        /*Glide.with(this)
-            .load(imageUri)
-            .into(analyseImage)
-        */
+            // Display the processed image with contour drawings in an ImageView
+            val processedImage : ImageView = binding.processedImageView
+            processedImage.setImageBitmap(processedBitmap)
+
+            // Display the list of Intensity Values
+            val listText : TextView = binding.listText
+            val formattedText = meanIntensityList.joinToString(", ")
+            listText.text = formattedText
+
+        }
 
     }
 
-    /* Perform image processing
-       To identify wells with coloured solution
-       and analyse the intensity of the colour in each well
+    /* Perform image processing on the captured/selected image
+       Step 1: To detect the wells with coloured solution that are within the specified threshold
+       Step 2: Draw contour (outline) the detected Regions of Interests (ROIs)
+       Step 3: Calculate the average intensity within the ROIs
      */
-    private fun processImage(originalBitmap: Bitmap?): Bitmap? {
+    private fun processImage(originalBitmap: Bitmap?): Pair<Bitmap?, List<Double>> {
         // Ensure OpenCV is loaded
         if (!OpenCVLoader.initDebug()) {
             // OpenCV initialisation failed
             Log.d("Check", "OpenCV initialisation failed")
-            return originalBitmap
+            return Pair(originalBitmap, emptyList())
         }
 
         // Convert Bitmap to Mat
@@ -80,10 +89,6 @@ class AnalysisActivity : AppCompatActivity() {
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
-        // Bitwise AND operation
-//        val resultMat = Mat()
-//        Core.bitwise_and(originalMat, originalMat, resultMat, thresholdMat)
-
         /* Start of contour detection that kinda works */
 
         // Find contours on the resulting image
@@ -95,15 +100,38 @@ class AnalysisActivity : AppCompatActivity() {
         val numberOfContours = contours.size
         Log.d("ContourDetection", "Number of contours found: $numberOfContours")
 
+        // Convert the original image to greyscale for obtaining colour intensity
+        val greyMat = Mat()
+        Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
+
+        // To store the values of the colour intensity of the ROIs in a list
+        val intensityValues = mutableListOf<Double>()
+
+        // Create a black image with the same size as the original image for the contour binary mask later on
+        val mask = Mat.zeros(originalMat.size(), CvType.CV_8U)
+
         // Iterate through contours and filter by area
         val minContourArea = 10000.0
         val filteredContours = ArrayList<MatOfPoint>()
 
         for (contour in contours) {
+            // Calculate the area of each contour detected
             val contourArea = Imgproc.contourArea(contour)
 
+            // ROIs have area > minContourArea
             if (contourArea > minContourArea) {
                 filteredContours.add(contour)
+
+                // Create a binary mask where regions inside the contour is filled with white (255) and outside remain black (0)
+                Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
+
+                // Calculate the average colour intensity within the contour in the greyscale image
+                val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+
+                // Round the calculated value to 5d.p.
+                val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
+
+                intensityValues.add(roundedIntensity)
             }
         }
 
@@ -111,76 +139,56 @@ class AnalysisActivity : AppCompatActivity() {
         val numberOfFilteredContours = filteredContours.size
         Log.d("ContourDetection", "Number of filtered contours: $numberOfFilteredContours")
 
-        // Visualise the filtered contours on the binary image
-        val contourImage = Mat.zeros(originalMat.size(), CvType.CV_8UC4)
-        Imgproc.drawContours(contourImage, filteredContours, -1, Scalar(0.0, 255.0, 0.0, 255.0), 2)
+        // Bitwise AND operation between the original image (Mat) and the binary mask
+//        val contourImage = Mat()
+//        Core.bitwise_and(originalMat, originalMat, contourImage, mask)
+
+        // Visualise and numbering the filtered contours on the binary image
+        val contourImage = originalMat.clone()
+        var contourNum = 1
+        for (contour in filteredContours) {
+            // Draw the contour
+            Imgproc.drawContours(contourImage, filteredContours, -1, Scalar(0.0, 255.0, 0.0, 255.0), 4)
+
+            // Number the contour
+            val contourCenter = getContourCenter(contour)
+            Imgproc.putText(
+                contourImage,
+                "#${contourNum++}",
+                contourCenter,
+                Imgproc.FONT_HERSHEY_SIMPLEX,
+                3.0,    // Font scale
+                Scalar(200.0, 0.0, 0.0, 255.0), // Font colour (Red in RGB format)
+                3,      // Font thickness
+                Imgproc.LINE_AA
+            )
+        }
+
+        /* End of contour detection */
 
         // Convert the result Mat back to Bitmap
         val resultBitmap = Bitmap.createBitmap(contourImage.cols(), contourImage.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(contourImage, resultBitmap)
 
-        /* End of contour detection */
-
         // Convert the thresholded Mat back to Bitmap
 //        val resultBitmap = Bitmap.createBitmap(thresholdMat.cols(), thresholdMat.rows(), Bitmap.Config.ARGB_8888)
 //        Utils.matToBitmap(thresholdMat, resultBitmap)
-
-        /* Using Hough Circle Transform */
-        // Apply Gaussian Blur to reduce noise and improve circle detection
-        //Imgproc.GaussianBlur(thresholdMat, thresholdMat, Size(9.0, 9.0), 2.0, 2.0)
-
-        // Find circles using Hough Circle Transform
-        /*val circles = Mat()
-        Imgproc.HoughCircles(thresholdMat, circles, Imgproc.CV_HOUGH_GRADIENT, 1.0, 20.0, 100.0, 30.0, 5, 100)
-
-        // Log the number of circles found
-        val numberOfCircles = circles.cols()
-        Log.d("CircleDetection", "Number of circles found: $numberOfCircles")
-
-        // Draw circles on the original image
-        val resultMat = originalMat.clone()
-        for (i in 0 until numberOfCircles) {
-            val circleCenter = Point(circles[0, i][0], circles[0, i][1])
-            val radius = circles[0, i][2].toInt()
-
-            Imgproc.circle(resultMat, circleCenter, radius, Scalar(0.0, 255.0, 0.0), 8)
-        }
-
-        // Convert the resultMat back to bitmap
-        val resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(resultMat, resultBitmap)*/
-
-        /*End of Hough Circle Transform*/
 
         // Release Mats to free up memory
         originalMat.release()
         hsvMat.release()
         thresholdMat.release()
-        //circles.release()
-        //resultMat. release()
+        greyMat.release()
 
-        return resultBitmap
+        return Pair(resultBitmap, intensityValues)
     }
 
-    // Perform greyscale conversion using OpenCV
-    private fun performImageProcessing(bitmap: Bitmap?): Bitmap? {
-        // Ensure OpenCV is loaded
-        if (!OpenCVLoader.initDebug()) {
-            // OpenCV initialisation failed
-            Log.d("Check", "OpenCV initialisation failed")
-            return bitmap
-        }
-
-        // Convert Bitmap to Mat
-        val mat = Mat()
-        Utils.bitmapToMat(bitmap, mat)
-
-        // Convert image to greyscale using OpenCV
-        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2GRAY)
-
-        // Convert Mat back to Bitmap
-        Utils.matToBitmap(mat, bitmap)
-
-        return bitmap
+    // Function to calculate the center of the contour
+    private fun getContourCenter(contour: MatOfPoint): Point {
+        val moments = Imgproc.moments(contour)
+        val centerX = moments.m10 / moments.m00
+        val centerY = moments.m01 / moments.m00
+        return Point(centerX, centerY)
     }
+
 }
