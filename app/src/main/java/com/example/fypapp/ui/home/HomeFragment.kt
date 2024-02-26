@@ -20,11 +20,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.AnalysisActivity
+import com.example.fypapp.R
 import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.io.IOException
@@ -40,7 +42,7 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by viewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels()
 
     // Request codes for camera and gallery permissions
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001
@@ -61,7 +63,13 @@ class HomeFragment : Fragment() {
                 saveImageToStorage(currentPhotoUri)
 
                 // Launch the Analysis page
-                startAnalysisActivity(currentPhotoUri)
+                //startAnalysisActivity(currentPhotoUri)
+
+                // Set the image URI to the SharedViewModel
+                currentPhotoUri?.let { sharedViewModel.setImageUri(it) }
+
+                // Navigate to Analysis Fragment Page
+                navigateToAnalysisFragment()
             }
         }
 
@@ -73,7 +81,13 @@ class HomeFragment : Fragment() {
                 val imageUri: Uri? = result.data?.data
 
                 // Launch the Analysis page
-                startAnalysisActivity(imageUri)
+                //startAnalysisActivity(imageUri)
+
+                // Set the image URI to the SharedViewModel
+                imageUri?.let { sharedViewModel.setImageUri(it) }
+
+                // Navigate to Analysis Fragment Page
+                navigateToAnalysisFragment()
             }
         }
 
@@ -179,7 +193,9 @@ class HomeFragment : Fragment() {
                 "com.example.fypapp.fileprovider",
                 it
             )
+            // Save the captured image
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri)
+
             // Launch the camera intent using the ActivityResultLauncher
             cameraLauncher.launch(takePictureIntent)
         }
@@ -189,6 +205,7 @@ class HomeFragment : Fragment() {
     private fun openGallery() {
         val galleryIntent = Intent(Intent.ACTION_PICK)
         galleryIntent.type = "image/*"
+
         // Launch the gallery intent using the ActivityResultLauncher
         galleryLauncher.launch(galleryIntent)
     }
@@ -294,6 +311,11 @@ class HomeFragment : Fragment() {
         val intent = Intent(requireContext(), AnalysisActivity::class.java)
         intent.putExtra("imageUri", imageUri)
         startActivity(intent)
+    }
+
+    // Navigate from Home Fragment to Analysis Fragment
+    private fun navigateToAnalysisFragment() {
+        findNavController().navigate(R.id.action_navigation_home_to_analysisFragment)
     }
 
 }

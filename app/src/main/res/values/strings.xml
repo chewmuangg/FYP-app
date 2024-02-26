@@ -14,5 +14,5 @@
         <item>Others</item>
     </string-array>
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello from Results fragment</string>
+    <string name="hello_blank_fragment">Hello from Analysis fragment</string>
 </resources>

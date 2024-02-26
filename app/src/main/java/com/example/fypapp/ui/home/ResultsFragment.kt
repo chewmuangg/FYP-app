@@ -1,4 +1,4 @@
-package com.example.fypapp.ui
+package com.example.fypapp.ui.home
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -23,7 +23,7 @@ class ResultsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentResultsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
