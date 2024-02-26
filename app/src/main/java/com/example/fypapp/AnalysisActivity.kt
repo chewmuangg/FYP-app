@@ -6,9 +6,7 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.*
 import com.example.fypapp.databinding.ActivityAnalysisBinding
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -20,18 +18,69 @@ class AnalysisActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAnalysisBinding
 
+    private lateinit var lowerThresholdValue: Scalar
+    private lateinit var upperThresholdValue: Scalar
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityAnalysisBinding. inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Setup adapter for Colour option dropdown menu
+        val colours = resources.getStringArray(R.array.dyeColours)
+        val arrayAdapter = ArrayAdapter(this, R.layout.colour_dropdown_item, colours)
+        val colourDropdown = binding.autoCompleteTextView
+        colourDropdown.setAdapter(arrayAdapter)
+
+        // Setup the respective actions for each option selected
+        colourDropdown.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            when (position) {
+                0 -> {
+                    // Option: Orange (0.1 – 10 mM)
+                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
+                    upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+                }
+
+                1 -> {
+                    // Option: Orange (0.025 – 0.5 mM)
+                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
+                    upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+                }
+
+                2 -> {
+                    // Option: Yellow (0.1 – 10 mM)
+                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
+                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
+                }
+
+                3 -> {
+                    // Option: Yellow (0.025 – 0.5 mM)
+                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
+                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
+                }
+
+                4 -> {
+                    // Option: Others
+                }
+
+                else -> {
+                    // Handle other clicks
+
+                }
+
+            }
+            // Handle item selection here
+            val selectedItem = parent.getItemAtPosition(position).toString()
+            Toast.makeText(this, "dye colour: " + selectedItem, Toast.LENGTH_SHORT).show()
+        }
+
         // Get the Uri from the intent
         val imageUri: Uri? = intent.getParcelableExtra("imageUri")
 
         // Display original image
-        val originalImage : ImageView = binding.originalImageView
-        originalImage.setImageURI(imageUri)
+        val selectedImage : ImageView = binding.selectedImage
+        selectedImage.setImageURI(imageUri)
 
         // Convert Image URI to Bitmap
         val inputStream: InputStream? = contentResolver.openInputStream(imageUri!!)
@@ -41,15 +90,16 @@ class AnalysisActivity : AppCompatActivity() {
         val processButton : Button = binding.processBtn
         processButton.setOnClickListener {
             // Call the Image Processing function
-            val result = processImage(bitmap)
+            val result = processImage(bitmap, lowerThresholdValue, upperThresholdValue)
 
             // Retrieve the processed bitmap and list of intensity values
             val processedBitmap: Bitmap? = result.first
             val meanIntensityList = result.second
 
             // Display the processed image with contour drawings in an ImageView
-            val processedImage : ImageView = binding.processedImageView
-            processedImage.setImageBitmap(processedBitmap)
+            //val processedImage : ImageView = binding.processedImageView
+            //processedImage.setImageBitmap(processedBitmap)
+            selectedImage.setImageBitmap(processedBitmap)
 
             // Display the list of Intensity Values
             val listText : TextView = binding.listText
@@ -58,6 +108,10 @@ class AnalysisActivity : AppCompatActivity() {
 
         }
 
+        val nextBtn : Button = binding.nextButton
+
+
+
     }
 
     /* Perform image processing on the captured/selected image
@@ -65,7 +119,11 @@ class AnalysisActivity : AppCompatActivity() {
        Step 2: Draw contour (outline) the detected Regions of Interests (ROIs)
        Step 3: Calculate the average intensity within the ROIs
      */
-    private fun processImage(originalBitmap: Bitmap?): Pair<Bitmap?, List<Double>> {
+    private fun processImage(
+        originalBitmap: Bitmap?,
+        lowerThresholdValue: Scalar,
+        upperThresholdValue: Scalar
+    ): Pair<Bitmap?, List<Double>> {
         // Ensure OpenCV is loaded
         if (!OpenCVLoader.initDebug()) {
             // OpenCV initialisation failed
@@ -82,8 +140,23 @@ class AnalysisActivity : AppCompatActivity() {
         Imgproc.cvtColor(originalMat, hsvMat, Imgproc.COLOR_RGB2HSV)
 
         // Define the colour range for the circles
-        val lowerThreshold = Scalar(100.0, 50.0, 25.0)
-        val upperThreshold = Scalar(155.0, 255.0, 255.0)
+        // multi-colour, Blue, purple, pink gradient
+//        val lowerThreshold = Scalar(100.0, 50.0, 25.0)
+//        val upperThreshold = Scalar(155.0, 255.0, 255.0)
+
+        // Define the colour range for the circles
+        // (red) orange gradient
+//        val lowerThreshold = Scalar(0.0, 100.0, 60.0)
+//        val upperThreshold = Scalar(20.0, 255.0, 255.0)
+
+        // Define the colour range for the circles
+        // yellow gradient
+//        val lowerThreshold = Scalar(20.0, 75.0, 25.0)
+//        val upperThreshold = Scalar(35.0, 255.0, 255.0)
+
+        // Get the respective lower & upper threshold value for the selected dye colour
+        val lowerThreshold = lowerThresholdValue
+        val upperThreshold = upperThresholdValue
 
         // Threshold the image to get a binary mask
         val thresholdMat = Mat()
@@ -111,7 +184,7 @@ class AnalysisActivity : AppCompatActivity() {
         val mask = Mat.zeros(originalMat.size(), CvType.CV_8U)
 
         // Iterate through contours and filter by area
-        val minContourArea = 10000.0
+        val minContourArea = 8000.0
         val filteredContours = ArrayList<MatOfPoint>()
 
         for (contour in contours) {

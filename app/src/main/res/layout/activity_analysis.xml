@@ -16,20 +16,48 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="40dp"
-                android:text="ORIGINAL" />
-
             <ImageView
-                android:id="@+id/originalImageView"
+                android:id="@+id/selectedImage"
                 android:layout_width="320dp"
                 android:layout_height="240dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="16dp"
                 android:scaleType="fitCenter" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:layout_gravity="center_vertical"
+                    android:text="Dye Colour"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+                    android:layout_width="260dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    >
+
+                    <AutoCompleteTextView
+                        android:id="@+id/autoCompleteTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
+                        android:text="Select a colour" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
 
             <Button
                 android:id="@+id/processBtn"
@@ -40,26 +68,17 @@
                 android:text="Process" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="10dp"
-                android:text="PROCESSED" />
-
-            <ImageView
-                android:id="@+id/processedImageView"
-                android:layout_width="320dp"
-                android:layout_height="240dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="6dp"
-                android:scaleType="fitCenter" />
-
-            <TextView
                 android:id="@+id/listText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginStart="8dp" />
+
+            <Button
+                android:id="@+id/nextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Button" />
 
         </LinearLayout>
 
