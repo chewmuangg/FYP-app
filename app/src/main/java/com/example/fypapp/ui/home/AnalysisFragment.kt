@@ -1,9 +1,12 @@
 package com.example.fypapp.ui.home
 
+import android.app.AlertDialog
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -95,10 +98,27 @@ class AnalysisFragment : Fragment() {
             listText.text = formattedText
         }
 
+        // Create a Handler instance to handle delayed actions
+        val handler = Handler()
+
+        // Define the delay duration in milliseconds
+        val delayMillis = 3000L // 3 seconds
+
         // Navigate to the Results page
         val nextBtn: Button = binding.nextButton
         nextBtn.setOnClickListener {
-            findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
+            // Show the loading dialog
+            val loadingDialog = showLoadingDialog(requireContext())
+
+            // post a delayed action to the handler
+            handler.postDelayed({
+                // Dismiss the loading dialog after the delay
+                loadingDialog.dismiss()
+
+                // Navigate to the Results Fragment page after the delay
+                findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
+            }, delayMillis)
+
         }
     }
 
@@ -303,5 +323,31 @@ class AnalysisFragment : Fragment() {
         val centerX = moments.m10 / moments.m00
         val centerY = moments.m01 / moments.m00
         return Point(centerX, centerY)
+    }
+
+    /* Function to display the loading animation upon clicking on the Process Button
+     * Navigates to the Results Fragment after 3 secs delay
+     */
+    private fun showLoadingDialog(context: Context): AlertDialog {
+        // Create an AlertDialog.Builder instance
+        val builder = AlertDialog.Builder(context)
+
+        // Inflate the layout for the loading dialog
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.my_loading_dialog, null)
+
+        // Set the inflated view to the dialog builder
+        builder.setView(view)
+
+        // Make the dialog non-cancelable (user cannot dismiss it by tapping outside)
+        builder.setCancelable(false)
+
+        // Create the AlertDialog from the builder
+        val dialog = builder.create()
+
+        // Show the dialog
+        dialog.show()
+
+        return dialog
     }
 }

@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,9 +24,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
-import com.example.fypapp.AnalysisActivity
 import com.example.fypapp.R
-import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -59,11 +56,8 @@ class HomeFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 // Handle the captured image from the camera
-                // Save the image to external storage before launching the Analysis Activity
+                // Save the image to external storage before navigating to the Analysis Fragment
                 saveImageToStorage(currentPhotoUri)
-
-                // Launch the Analysis page
-                //startAnalysisActivity(currentPhotoUri)
 
                 // Set the image URI to the SharedViewModel
                 currentPhotoUri?.let { sharedViewModel.setImageUri(it) }
@@ -79,9 +73,6 @@ class HomeFragment : Fragment() {
             if (result.resultCode == Activity.RESULT_OK) {
                 // Handle the selected image from the gallery
                 val imageUri: Uri? = result.data?.data
-
-                // Launch the Analysis page
-                //startAnalysisActivity(imageUri)
 
                 // Set the image URI to the SharedViewModel
                 imageUri?.let { sharedViewModel.setImageUri(it) }
@@ -253,31 +244,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // Handle the result of the Camera and Gallery Intents
-    /*override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK) {
-            when (requestCode) {
-                CAMERA_PERMISSION_REQUEST_CODE -> {
-                    // Handle the captured image from the camera
-                    val imageUri : Uri? = data?.data
-
-                    // Start AnalysisActivity with the image Uri
-                    startAnalysisActivity(imageUri)
-                }
-
-                GALLERY_PERMISSION_REQUEST_CODE -> {
-                    // Handle the selected image from the gallery
-                    val imageUri : Uri? = data?.data
-
-                    // Start AnalysisActivity with the image Uri
-                    startAnalysisActivity(imageUri)
-                }
-            }
-
-        }
-    }*/
-
     /* Handle the results of the permission requests.
      * If granted, calls the corresponding method openCamera() or openGallery().
      * If denied, do nothing.
@@ -304,13 +270,6 @@ class HomeFragment : Fragment() {
                 }
             }
         }
-    }
-
-    // Launch Analysis Activity with the provided image URI
-    private fun startAnalysisActivity(imageUri: Uri?) {
-        val intent = Intent(requireContext(), AnalysisActivity::class.java)
-        intent.putExtra("imageUri", imageUri)
-        startActivity(intent)
     }
 
     // Navigate from Home Fragment to Analysis Fragment

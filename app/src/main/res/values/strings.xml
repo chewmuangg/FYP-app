@@ -3,8 +3,6 @@
     <string name="title_home">Home</string>
     <string name="title_history">History</string>
     <string name="title_settings">Settings</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="text_analysis_activity">This is Analysis Activity</string>
 
     <string-array name="dyeColours">
         <item>Orange (0.1 – 10 mM)</item>
@@ -13,6 +11,8 @@
         <item>Yellow (0.025 – 0.5 mM)</item>
         <item>Others</item>
     </string-array>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello from Analysis fragment</string>
+
+    <!-- Loading Dialog Fragment -->
+    <string name="text_loading">Processing image. Please wait...</string>
+
 </resources>
