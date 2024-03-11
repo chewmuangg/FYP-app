@@ -38,10 +38,12 @@ class AnalysisFragment : Fragment() {
     private val sharedViewModel: SharedViewModel by activityViewModels()
 
     // Declare variables
+    private var selectedItem: String = ""
     //private var imageUri: Uri? = null
     private var bitmap: Bitmap? = null
     private lateinit var lowerThresholdValue: Scalar
     private lateinit var upperThresholdValue: Scalar
+    private lateinit var meanIntensityList: List<Double>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -82,20 +84,32 @@ class AnalysisFragment : Fragment() {
         // Perform Image Processing with OpenCV upon clicking onto the "Process" Button
         val processButton : Button = binding.processBtn
         processButton.setOnClickListener {
-            // Call the Image Processing function
-            val result = processImage(bitmap, lowerThresholdValue, upperThresholdValue)
+            if (selectedItem.isEmpty()) {
+                // No Dye Colour selection
+                Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-            // Retrieve the processed bitmap and list of intensity values
-            val processedBitmap: Bitmap? = result.first
-            val meanIntensityList = result.second
+            } else if (selectedItem == "Others") {
+                // "Others" is selected
+                Toast.makeText(requireContext(), "This option is unavailable at the moment", Toast.LENGTH_SHORT).show()
 
-            // Display the processed image with contour drawings in an ImageView
-            selectedImage.setImageBitmap(processedBitmap)
+            } else {
+                // A Dye Colour selection is made
+                // Call the Image Processing function
+                val result = processImage(bitmap, lowerThresholdValue, upperThresholdValue)
 
-            // Display the list of Intensity Values
-            val listText : TextView = binding.listText
-            val formattedText = meanIntensityList.joinToString(", ")
-            listText.text = formattedText
+                // Retrieve the processed bitmap and list of intensity values
+                val processedBitmap: Bitmap? = result.first
+                meanIntensityList = result.second
+
+                // Display the processed image with contour drawings in an ImageView
+                selectedImage.setImageBitmap(processedBitmap)
+
+                // Display the list of Intensity Values
+                val listText : TextView = binding.listText
+                val formattedText = meanIntensityList.joinToString(", ")
+                listText.text = formattedText
+            }
+
         }
 
         // Create a Handler instance to handle delayed actions
@@ -107,6 +121,9 @@ class AnalysisFragment : Fragment() {
         // Navigate to the Results page
         val nextBtn: Button = binding.nextButton
         nextBtn.setOnClickListener {
+            // Set the value of intensityValues in sharedViewModel to the data with other fragments
+            sharedViewModel.setIntensityValuesList(meanIntensityList)
+
             // Show the loading dialog
             val loadingDialog = showLoadingDialog(requireContext())
 
@@ -169,7 +186,7 @@ class AnalysisFragment : Fragment() {
 
             }
             // Handle item selection here
-            val selectedItem = parent.getItemAtPosition(position).toString()
+            selectedItem = parent.getItemAtPosition(position).toString()
             Toast.makeText(requireContext(), "dye colour: " + selectedItem, Toast.LENGTH_SHORT).show()
         }
 
@@ -234,17 +251,7 @@ class AnalysisFragment : Fragment() {
         val numberOfContours = contours.size
         Log.d("ContourDetection", "Number of contours found: $numberOfContours")
 
-        // Convert the original image to greyscale for obtaining colour intensity
-        val greyMat = Mat()
-        Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
-
-        // To store the values of the colour intensity of the ROIs in a list
-        val intensityValues = mutableListOf<Double>()
-
-        // Create a black image with the same size as the original image for the contour binary mask later on
-        val mask = Mat.zeros(originalMat.size(), CvType.CV_8U)
-
-        // Iterate through contours and filter by area
+        // Iterate through contours and filter by area to obtain only the Regions Of Interest
         val minContourArea = 8000.0
         val filteredContours = ArrayList<MatOfPoint>()
 
@@ -255,17 +262,6 @@ class AnalysisFragment : Fragment() {
             // ROIs have area > minContourArea
             if (contourArea > minContourArea) {
                 filteredContours.add(contour)
-
-                // Create a binary mask where regions inside the contour is filled with white (255) and outside remain black (0)
-                Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
-
-                // Calculate the average colour intensity within the contour in the greyscale image
-                val meanIntensity = Core.mean(greyMat, mask).`val`[0]
-
-                // Round the calculated value to 5d.p.
-                val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
-
-                intensityValues.add(roundedIntensity)
             }
         }
 
@@ -273,18 +269,41 @@ class AnalysisFragment : Fragment() {
         val numberOfFilteredContours = filteredContours.size
         Log.d("ContourDetection", "Number of filtered contours: $numberOfFilteredContours")
 
-        // Bitwise AND operation between the original image (Mat) and the binary mask
-//        val contourImage = Mat()
-//        Core.bitwise_and(originalMat, originalMat, contourImage, mask)
+        // Sort the contours in filteredContours based on their their x-coordinates (from left to right)
+        //filteredContours.sortWith(compareBy({ getContourCenter(it).x }, { getContourCenter(it).y}))   // sort by x-coord first, then if x-coords are the same then sort by y-coord
+        filteredContours.sortBy{ getContourCenter(it).x }
+
+        // Convert the original image to greyscale for obtaining colour intensity
+        val greyMat = Mat()
+        Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
+
+        // To store the values of the colour intensity of the ROIs in a list
+        val intensityValues = mutableListOf<Double>()
 
         // Visualise and numbering the filtered contours on the binary image
         val contourImage = originalMat.clone()
         var contourNum = 1
         for (contour in filteredContours) {
-            // Draw the contour
-            Imgproc.drawContours(contourImage, filteredContours, -1, Scalar(0.0, 255.0, 0.0, 255.0), 4)
+            // Create a black image with the same size as the original image for the contour binary mask later on
+            // This contour binary mask will be a new for each contour
+            val mask = Mat.zeros(originalMat.size(), CvType.CV_8U)
 
-            // Number the contour
+            // Create a binary mask where regions inside the contour is filled with white (255) and outside remain black (0)
+            Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
+
+            // Calculate the average colour intensity within the contour in the greyscale image
+            val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+
+            // Round the calculated value to 5d.p.
+            val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
+
+            // Add the new roundedIntensity value into the intensityValues Array
+            intensityValues.add(roundedIntensity)
+
+            // Draw the contour
+            Imgproc.drawContours(contourImage, listOf(contour), -1, Scalar(0.0, 255.0, 0.0, 255.0), 4)
+
+            // Number the contour by the array columns
             val contourCenter = getContourCenter(contour)
             Imgproc.putText(
                 contourImage,
