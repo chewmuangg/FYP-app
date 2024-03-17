@@ -19,10 +19,11 @@
             android:paddingVertical="16dp">
 
             <ImageView
-                android:layout_width="240dp"
-                android:layout_height="180dp"
+                android:id="@+id/processedImg"
+                android:layout_width="360dp"
+                android:layout_height="270dp"
                 android:layout_gravity="center_horizontal"
-                android:scaleType="fitCenter"/>
+                android:scaleType="fitCenter" />
 
             <androidx.core.widget.NestedScrollView
                 android:layout_width="match_parent"
@@ -35,19 +36,6 @@
                     android:layout_height="wrap_content"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
             </androidx.core.widget.NestedScrollView>
-
-            <!-- TODO: Update blank fragment layout -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="20dp"
-                android:text="hello Results fragment" />
-
-            <TextView
-                android:id="@+id/listText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" />
 
         </LinearLayout>
 

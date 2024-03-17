@@ -1,7 +1,7 @@
 package com.example.fypapp.data
 
 data class ColResult(
-    var colNum: String,
+    var colName: String,
     var avgValue: String,
     var value1: String,
     var value2: String,

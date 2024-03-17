@@ -18,6 +18,16 @@ class SharedViewModel : ViewModel() {
         _imageUri.value = uri
     }
 
+    /* Processed Image Uri */
+    // To get the resulting processed image bitmap from Analysis Fragment in Results Fragment
+    private val _processedBitmap = MutableLiveData<Bitmap>()
+    val processedBitmap: LiveData<Bitmap> = _processedBitmap
+
+    // Function to set the value of processedBitmap
+    fun setProcessedBitmap(bitmap: Bitmap) {
+        _processedBitmap.value = bitmap
+    }
+
     /* Intensity Values List */
     // To get the intensityValues List from AnalysisFragment in ResultsFragment
     private val _intensityValues = MutableLiveData<List<Double>>()

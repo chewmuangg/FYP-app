@@ -40,49 +40,37 @@ class ResultsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initData()
+        sharedViewModel.processedBitmap.observe(viewLifecycleOwner, Observer {
+            val processedImg = binding.processedImg
+            processedImg.setImageBitmap(it)
+        })
 
         val resultsAdapter = ResultsAdapter(resultsList)
         val resultsRecyclerView = binding.resultsRecyclerView
         resultsRecyclerView.adapter = resultsAdapter
 
-        sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {
-            // Display the list of Intensity Values
-            val listText : TextView = binding.listText
-            val formattedText = it.joinToString(", ")
-            listText.text = formattedText
+        var colNum = 1
+
+        sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {dataList ->
+            // Loop through the dataList List and map to the respective attribute in the ColResult data class
+            for (i in dataList.indices step 3) {
+                // Every 3 values becomes one group
+                // Set the name of the column
+                val colName = "Test ${colNum++}"    // Test 1, Test 2, Test 3 ...
+
+                // Set the 3 individual values into value1, 2, 3 respectively
+                val value1 = dataList[i]
+                val value2 = dataList[i + 1]
+                val value3 = dataList[i + 2]
+
+                // Calculate the average of the 3 values
+                val average = (value1 + value2 + value3) / 3
+
+                // Add the data array of ColResult into resultList
+                resultsList.add(ColResult(colName, String.format("%.5f", average), value1.toString(), value2.toString(), value3.toString()))
+
+            }
         })
-    }
-
-    private fun initData() {
-        resultsList.add(
-            ColResult(
-            "Column 1",
-            "50",
-            "51",
-            "52",
-            "53"
-            )
-        )
-        resultsList.add(
-            ColResult(
-            "Column 2",
-            "60",
-            "61",
-            "62",
-            "63"
-            )
-        )
-        resultsList.add(
-            ColResult(
-            "Column 3",
-            "70",
-            "71",
-            "72",
-            "73"
-            )
-        )
-
     }
 
 }

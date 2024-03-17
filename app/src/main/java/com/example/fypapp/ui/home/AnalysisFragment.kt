@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -44,6 +43,9 @@ class AnalysisFragment : Fragment() {
     private lateinit var lowerThresholdValue: Scalar
     private lateinit var upperThresholdValue: Scalar
     private lateinit var meanIntensityList: List<Double>
+    private lateinit var imageResult: Bitmap
+    private var hasProcessed: Boolean = false
+    private var isRed: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -88,26 +90,28 @@ class AnalysisFragment : Fragment() {
                 // No Dye Colour selection
                 Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-            } else if (selectedItem == "Others") {
-                // "Others" is selected
-                Toast.makeText(requireContext(), "This option is unavailable at the moment", Toast.LENGTH_SHORT).show()
+            }
+
+            if (!isRed) {
+                // Red Dye is not selected
+                Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
 
             } else {
-                // A Dye Colour selection is made
+                // Red Dye is selected
                 // Call the Image Processing function
-                val result = processImage(bitmap, lowerThresholdValue, upperThresholdValue)
+                imageResult = processImage(bitmap, lowerThresholdValue, upperThresholdValue)!!
+                hasProcessed = true
 
                 // Retrieve the processed bitmap and list of intensity values
-                val processedBitmap: Bitmap? = result.first
-                meanIntensityList = result.second
+                //val processedBitmap: Bitmap? = result
 
                 // Display the processed image with contour drawings in an ImageView
-                selectedImage.setImageBitmap(processedBitmap)
+                selectedImage.setImageBitmap(imageResult)
 
                 // Display the list of Intensity Values
-                val listText : TextView = binding.listText
+                /*val listText : TextView = binding.listText
                 val formattedText = meanIntensityList.joinToString(", ")
-                listText.text = formattedText
+                listText.text = formattedText*/
             }
 
         }
@@ -116,25 +120,48 @@ class AnalysisFragment : Fragment() {
         val handler = Handler()
 
         // Define the delay duration in milliseconds
-        val delayMillis = 3000L // 3 seconds
+        val delayMillis = 2000L // 2 seconds
 
-        // Navigate to the Results page
+        // Navigate to the Results page upon clicking onto "Next" button
         val nextBtn: Button = binding.nextButton
         nextBtn.setOnClickListener {
             // Set the value of intensityValues in sharedViewModel to the data with other fragments
-            sharedViewModel.setIntensityValuesList(meanIntensityList)
+            //sharedViewModel.setIntensityValuesList(meanIntensityList)
 
-            // Show the loading dialog
-            val loadingDialog = showLoadingDialog(requireContext())
+            // Run processImage Function if not yet ran
+            if (!hasProcessed) {
+                if (selectedItem.isEmpty()) {
+                    // No Dye Colour selection
+                    Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-            // post a delayed action to the handler
-            handler.postDelayed({
-                // Dismiss the loading dialog after the delay
-                loadingDialog.dismiss()
+                }
 
-                // Navigate to the Results Fragment page after the delay
-                findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
-            }, delayMillis)
+                if (!isRed) {
+                    // Red Dye is not selected
+                    Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
+
+                } else {
+                    imageResult = processImage(bitmap, lowerThresholdValue,upperThresholdValue)!!
+
+                    hasProcessed = true
+
+                    sharedViewModel.setProcessedBitmap(imageResult)
+
+                    // Show the loading dialog
+                    val loadingDialog = showLoadingDialog(requireContext())
+
+                    // post a delayed action to the handler
+                    handler.postDelayed({
+                        // Dismiss the loading dialog after the delay
+                        loadingDialog.dismiss()
+
+                        // Navigate to the Results Fragment page after the delay
+                        findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
+                    }, delayMillis)
+                }
+            }
+
+
 
         }
     }
@@ -155,6 +182,7 @@ class AnalysisFragment : Fragment() {
                     // Option: Orange (0.1 – 10 mM)
                     lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
                     upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+                    isRed = true
                 }
 
                 1 -> {
@@ -201,12 +229,16 @@ class AnalysisFragment : Fragment() {
         originalBitmap: Bitmap?,
         lowerThresholdValue: Scalar,
         upperThresholdValue: Scalar
-    ): Pair<Bitmap?, List<Double>> {
+    ): Bitmap? {
         // Ensure OpenCV is loaded
         if (!OpenCVLoader.initDebug()) {
             // OpenCV initialisation failed
             Log.d("Check", "OpenCV initialisation failed")
-            return Pair(originalBitmap, emptyList())
+
+            // Show a toast message indicating that OpenCV initialisation has failed
+            Toast.makeText(requireContext(), "OpenCV initialisation failed!", Toast.LENGTH_SHORT).show()
+
+            return originalBitmap
         }
 
         // Convert Bitmap to Mat
@@ -327,13 +359,15 @@ class AnalysisFragment : Fragment() {
 //        val resultBitmap = Bitmap.createBitmap(thresholdMat.cols(), thresholdMat.rows(), Bitmap.Config.ARGB_8888)
 //        Utils.matToBitmap(thresholdMat, resultBitmap)
 
+        sharedViewModel.setIntensityValuesList(intensityValues)
+
         // Release Mats to free up memory
         originalMat.release()
         hsvMat.release()
         thresholdMat.release()
         greyMat.release()
 
-        return Pair(resultBitmap, intensityValues)
+        return resultBitmap
     }
 
     // Function to calculate the center of the contour
