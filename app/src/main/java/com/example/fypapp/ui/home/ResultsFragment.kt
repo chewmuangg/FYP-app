@@ -1,5 +1,6 @@
 package com.example.fypapp.ui.home
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -13,6 +14,9 @@ import com.example.fypapp.SharedViewModel
 import com.example.fypapp.adapter.ResultsAdapter
 import com.example.fypapp.data.ColResult
 import com.example.fypapp.databinding.FragmentResultsBinding
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 
 class ResultsFragment : Fragment() {
 
@@ -25,7 +29,7 @@ class ResultsFragment : Fragment() {
     private val sharedViewModel: SharedViewModel by activityViewModels()
 
     // Declare variables
-    private val resultsList = ArrayList<ColResult>()
+    //private val resultsList = ArrayList<ColResult>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,7 +49,8 @@ class ResultsFragment : Fragment() {
             processedImg.setImageBitmap(it)
         })
 
-        val resultsAdapter = ResultsAdapter(resultsList)
+        // Results in RecyclerView
+        /*val resultsAdapter = ResultsAdapter(resultsList)
         val resultsRecyclerView = binding.resultsRecyclerView
         resultsRecyclerView.adapter = resultsAdapter
 
@@ -70,7 +75,63 @@ class ResultsFragment : Fragment() {
                 resultsList.add(ColResult(colName, String.format("%.5f", average), value1.toString(), value2.toString(), value3.toString()))
 
             }
+        })*/
+
+        // HSV value analysis
+        // LineChart
+        val lineChart = binding.lineChart
+
+        // Data entries for each of the H, S, V values
+        val hueData = ArrayList<Entry>()
+        val satData = ArrayList<Entry>()
+        val valData = ArrayList<Entry>()
+
+        var count = 0f
+
+        // observe the intensityValues LiveData
+        sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer { dataList ->
+
+            /*for (data in dataList) {
+                val hueValue = data.`val`[0]
+                val satValue = data.`val`[1]
+                val valValue = data.`val`[2]
+
+                // add the data values into the ArrayList<Entry> of hueData, satData & valData respectively
+                hueData.add(Entry(count, hueValue.toFloat()))
+                satData.add(Entry(count, satValue.toFloat()))
+                valData.add(Entry(count, valValue.toFloat()))
+
+                count++
+            }*/
+
+            val listText : TextView = binding.listText
+            val formattedText = dataList.joinToString(", ")
+            listText.text = formattedText
         })
+
+        hueData.add(Entry(0f, 10f))
+        satData.add(Entry(0f, 20f))
+        valData.add(Entry(0f,30f))
+
+        hueData.add(Entry(1f, 70f))
+        satData.add(Entry(1f, 50f))
+        valData.add(Entry(1f,90f))
+
+        hueData.add(Entry(2f, 100f))
+        satData.add(Entry(2f, 120f))
+        valData.add(Entry(2f,40f))
+
+        val hueDataSet = LineDataSet(hueData, "Hue")
+        hueDataSet.color = Color.BLUE
+        val satDataSet = LineDataSet(satData, "Saturation")
+        satDataSet.color = Color.GREEN
+        val valDataSet = LineDataSet(valData, "Value")
+        valDataSet.color = Color.RED
+
+        val lineData = LineData(hueDataSet, satDataSet, valDataSet)
+
+        lineChart.data = lineData
+
     }
 
 }

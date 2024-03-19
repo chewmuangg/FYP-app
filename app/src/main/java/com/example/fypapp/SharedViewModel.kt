@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import org.opencv.core.Scalar
 
 class SharedViewModel : ViewModel() {
 
@@ -30,11 +31,16 @@ class SharedViewModel : ViewModel() {
 
     /* Intensity Values List */
     // To get the intensityValues List from AnalysisFragment in ResultsFragment
-    private val _intensityValues = MutableLiveData<List<Double>>()
-    val intensityValues: LiveData<List<Double>> = _intensityValues
+//    private val _intensityValues = MutableLiveData<List<Double>>()
+//    val intensityValues: LiveData<List<Double>> = _intensityValues
+    private val _intensityValues = MutableLiveData<List<Scalar>>()
+    val intensityValues: LiveData<List<Scalar>> = _intensityValues
 
     // Function to set the value of the intensityValues List
-    fun setIntensityValuesList(dataList: List<Double>) {
+    /*fun setIntensityValuesList(dataList: List<Double>) {
+        _intensityValues.value = dataList
+    }*/
+    fun setIntensityValuesList(dataList: List<Scalar>) {
         _intensityValues.value = dataList
     }
 

@@ -109,9 +109,13 @@ class AnalysisFragment : Fragment() {
                 selectedImage.setImageBitmap(imageResult)
 
                 // Display the list of Intensity Values
-                /*val listText : TextView = binding.listText
-                val formattedText = meanIntensityList.joinToString(", ")
-                listText.text = formattedText*/
+                sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {
+                    val listText : TextView = binding.listText
+                    val formattedText = it.joinToString(", ")
+                    listText.text = formattedText
+                })
+
+
             }
 
         }
@@ -205,6 +209,9 @@ class AnalysisFragment : Fragment() {
 
                 4 -> {
                     // Option: Others
+                    lowerThresholdValue = Scalar(100.0, 50.0, 25.0)
+                    upperThresholdValue = Scalar(155.0, 255.0, 255.0)
+                    isRed = true
                 }
 
                 else -> {
@@ -303,14 +310,15 @@ class AnalysisFragment : Fragment() {
 
         // Sort the contours in filteredContours based on their their x-coordinates (from left to right)
         //filteredContours.sortWith(compareBy({ getContourCenter(it).x }, { getContourCenter(it).y}))   // sort by x-coord first, then if x-coords are the same then sort by y-coord
-        filteredContours.sortBy{ getContourCenter(it).x }
+        //filteredContours.sortBy{ getContourCenter(it).x }
 
         // Convert the original image to greyscale for obtaining colour intensity
         val greyMat = Mat()
         Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
 
         // To store the values of the colour intensity of the ROIs in a list
-        val intensityValues = mutableListOf<Double>()
+        //val intensityValues = mutableListOf<Double>()
+        val intensityValues = mutableListOf<Scalar>()
 
         // Visualise and numbering the filtered contours on the binary image
         val contourImage = originalMat.clone()
@@ -324,13 +332,14 @@ class AnalysisFragment : Fragment() {
             Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
 
             // Calculate the average colour intensity within the contour in the greyscale image
-            val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+            //val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+            val meanIntensity = Core.mean(hsvMat, mask)
 
             // Round the calculated value to 5d.p.
-            val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
+            //val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
 
             // Add the new roundedIntensity value into the intensityValues Array
-            intensityValues.add(roundedIntensity)
+            intensityValues.add(meanIntensity)
 
             // Draw the contour
             Imgproc.drawContours(contourImage, listOf(contour), -1, Scalar(0.0, 255.0, 0.0, 255.0), 4)
