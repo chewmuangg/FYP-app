@@ -22,9 +22,11 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.example.fypapp.MedifyApplication
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.R
+import com.example.fypapp.SharedViewModelFactory
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -39,7 +41,11 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels() {
+        SharedViewModelFactory(
+            (requireActivity().application as MedifyApplication).gResultRepository
+        )
+    }
 
     // Request codes for camera and gallery permissions
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001

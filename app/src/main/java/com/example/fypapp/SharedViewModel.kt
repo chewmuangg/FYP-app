@@ -2,12 +2,13 @@ package com.example.fypapp
 
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
+import com.example.fypapp.data.GraphResult
+import com.example.fypapp.data.GraphResultRepository
+import kotlinx.coroutines.launch
 import org.opencv.core.Scalar
 
-class SharedViewModel : ViewModel() {
+class SharedViewModel(private val graphResultRepository: GraphResultRepository) : ViewModel() {
 
     /* Image Uri */
     // To get the Captured/Selected Image Uri from Home Fragment in Analysis Fragment
@@ -44,4 +45,40 @@ class SharedViewModel : ViewModel() {
         _intensityValues.value = dataList
     }
 
+
+    private val _isRed = MutableLiveData<Boolean>()
+    val isRed: LiveData<Boolean> = _isRed
+
+    fun setIsRed(state: Boolean) {
+        _isRed.value = state
+    }
+
+    /* Database */
+
+    // Retrieve all GraphResults from database
+    val allGraphResult: LiveData<List<GraphResult>> = graphResultRepository.allResults.asLiveData()
+
+    // Save new GraphResult to database
+    fun insertRecord(newGraphResult: GraphResult) = viewModelScope.launch {
+        graphResultRepository.insert(newGraphResult)
+    }
+
+    // Retrieve the specific GraphResult from database using the specified id
+
+
+    // Delete the specific GraphResult
+
+
+}
+
+class SharedViewModelFactory(
+    private val graphResultRepository: GraphResultRepository
+): ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SharedViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return SharedViewModel(graphResultRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

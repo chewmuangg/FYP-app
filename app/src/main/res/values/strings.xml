@@ -1,18 +1,18 @@
 <resources>
-    <string name="app_name">FYPapp</string>
+    <string name="app_name">Medify</string>
     <string name="title_home">Home</string>
     <string name="title_history">History</string>
     <string name="title_settings">Settings</string>
 
     <string-array name="dyeColours">
-        <item>Orange (0.1 – 10 mM)</item>
-        <item>Orange (0.025 – 0.5 mM)</item>
-        <item>Yellow (0.1 – 10 mM)</item>
-        <item>Yellow (0.025 – 0.5 mM)</item>
+        <item>R6G Dye </item>
+        <item>Resazurin</item>
         <item>Others</item>
     </string-array>
 
     <!-- Loading Dialog Fragment -->
     <string name="text_loading">Processing image. Please wait...</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

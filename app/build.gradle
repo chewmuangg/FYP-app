@@ -67,7 +67,10 @@ dependencies {
     // OpenCV Library
     implementation project(path: ':openCVLibrary480')
 
-    // MPChart
+    // MPAndroidChart
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // Gson Library
+    implementation 'com.google.code.gson:gson:2.10.1'
 
 }

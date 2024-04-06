@@ -15,8 +15,10 @@ import android.widget.*
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.example.fypapp.MedifyApplication
 import com.example.fypapp.R
 import com.example.fypapp.SharedViewModel
+import com.example.fypapp.SharedViewModelFactory
 import com.example.fypapp.databinding.FragmentAnalysisBinding
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -34,7 +36,11 @@ class AnalysisFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels() {
+        SharedViewModelFactory(
+            (requireActivity().application as MedifyApplication).gResultRepository
+        )
+    }
 
     // Declare variables
     private var selectedItem: String = ""
@@ -46,6 +52,7 @@ class AnalysisFragment : Fragment() {
     private lateinit var imageResult: Bitmap
     private var hasProcessed: Boolean = false
     private var isRed: Boolean = false
+    private var isResazurin: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,14 +97,12 @@ class AnalysisFragment : Fragment() {
                 // No Dye Colour selection
                 Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-            }
+            } else if (selectedItem == "Others") {
+                // "Others" is selected
+                Toast.makeText(requireContext(), "This option is currently unavailable. Please select another option.", Toast.LENGTH_SHORT).show()
 
-            if (!isRed) {
-                // Red Dye is not selected
-                Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
-
-            } else {
-                // Red Dye is selected
+            } else if (isRed || isResazurin) {
+                // R6G or Resazurin is selected
                 // Call the Image Processing function
                 imageResult = processImage(bitmap, lowerThresholdValue, upperThresholdValue)!!
                 hasProcessed = true
@@ -134,22 +139,19 @@ class AnalysisFragment : Fragment() {
 
             // Run processImage Function if not yet ran
             if (!hasProcessed) {
+                // Check if a Dye option has been selected
                 if (selectedItem.isEmpty()) {
                     // No Dye Colour selection
                     Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-                }
+                } else if (isRed || isResazurin) {
 
-                if (!isRed) {
-                    // Red Dye is not selected
-                    Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
-
-                } else {
                     imageResult = processImage(bitmap, lowerThresholdValue,upperThresholdValue)!!
 
                     hasProcessed = true
 
                     sharedViewModel.setProcessedBitmap(imageResult)
+                    sharedViewModel.setIsRed(isRed)
 
                     // Show the loading dialog
                     val loadingDialog = showLoadingDialog(requireContext())
@@ -162,7 +164,27 @@ class AnalysisFragment : Fragment() {
                         // Navigate to the Results Fragment page after the delay
                         findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
                     }, delayMillis)
+
+                } else if (selectedItem == "Others") {
+                    // "Others" is selected
+                    Toast.makeText(requireContext(), "This option is currently unavailable. Please select another option.", Toast.LENGTH_SHORT).show()
                 }
+
+            } else {
+                sharedViewModel.setProcessedBitmap(imageResult)
+                sharedViewModel.setIsRed(isRed)
+
+                // Show the loading dialog
+                val loadingDialog = showLoadingDialog(requireContext())
+
+                // post a delayed action to the handler
+                handler.postDelayed({
+                    // Dismiss the loading dialog after the delay
+                    loadingDialog.dismiss()
+
+                    // Navigate to the Results Fragment page after the delay
+                    findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
+                }, delayMillis)
             }
 
 
@@ -183,46 +205,33 @@ class AnalysisFragment : Fragment() {
         colourDropdown.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             when (position) {
                 0 -> {
-                    // Option: Orange (0.1 – 10 mM)
+                    // Option: R6G Dye
                     lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
                     upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+
                     isRed = true
+                    isResazurin = false
                 }
 
                 1 -> {
-                    // Option: Orange (0.025 – 0.5 mM)
-                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
-                    upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+                    // Option: Resazurin
+                    lowerThresholdValue = Scalar(100.0, 50.0, 25.0)
+                    upperThresholdValue = Scalar(155.0, 255.0, 255.0)
+
+                    isResazurin = true
+                    isRed = false
                 }
 
                 2 -> {
-                    // Option: Yellow (0.1 – 10 mM)
-                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
-                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
-                }
-
-                3 -> {
-                    // Option: Yellow (0.025 – 0.5 mM)
-                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
-                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
-                }
-
-                4 -> {
                     // Option: Others
-                    lowerThresholdValue = Scalar(100.0, 50.0, 25.0)
-                    upperThresholdValue = Scalar(155.0, 255.0, 255.0)
-                    isRed = true
-                }
-
-                else -> {
-                    // Handle other clicks
-
+                    isRed = false
+                    isResazurin = false
                 }
 
             }
             // Handle item selection here
             selectedItem = parent.getItemAtPosition(position).toString()
-            Toast.makeText(requireContext(), "dye colour: " + selectedItem, Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "$selectedItem is selected to analyse", Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -279,7 +288,7 @@ class AnalysisFragment : Fragment() {
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
-        /* Start of contour detection that kinda works */
+        /* Start of contour detection */
 
         // Find contours on the resulting image
         val contours = ArrayList<MatOfPoint>()
@@ -310,7 +319,9 @@ class AnalysisFragment : Fragment() {
 
         // Sort the contours in filteredContours based on their their x-coordinates (from left to right)
         //filteredContours.sortWith(compareBy({ getContourCenter(it).x }, { getContourCenter(it).y}))   // sort by x-coord first, then if x-coords are the same then sort by y-coord
-        //filteredContours.sortBy{ getContourCenter(it).x }
+        if (isRed) {
+            filteredContours.sortBy{ getContourCenter(it).x }
+        }
 
         // Convert the original image to greyscale for obtaining colour intensity
         val greyMat = Mat()
