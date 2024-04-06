@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp">
 
             <ImageView
                 android:id="@+id/processedImg"
@@ -44,15 +44,15 @@
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChart"
-                android:layout_width="360dp"
-                android:layout_height="360dp"
+                android:layout_width="368dp"
+                android:layout_height="368dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="40dp" >
 
             </com.github.mikephil.charting.charts.LineChart>
 
             <LinearLayout
-                android:layout_width="360dp"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="40dp"
                 android:layout_gravity="center_horizontal"

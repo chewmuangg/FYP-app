@@ -19,7 +19,11 @@
         android:id="@+id/navigation_history"
         android:name="com.example.fypapp.ui.history.HistoryFragment"
         android:label="@string/title_history"
-        tools:layout="@layout/fragment_history" />
+        tools:layout="@layout/fragment_history" >
+        <action
+            android:id="@+id/action_navigation_history_to_historyItemFragment"
+            app:destination="@id/historyItemFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_settings"
@@ -29,7 +33,7 @@
     <fragment
         android:id="@+id/analysisFragment"
         android:name="com.example.fypapp.ui.home.AnalysisFragment"
-        android:label="Image Preview"
+        android:label="@string/title_analysis"
         tools:layout="@layout/fragment_analysis">
         <action
             android:id="@+id/action_analysisFragment_to_resultsFragment"
@@ -41,7 +45,7 @@
     <fragment
         android:id="@+id/resultsFragment"
         android:name="com.example.fypapp.ui.home.ResultsFragment"
-        android:label="Analysis Results"
+        android:label="@string/title_results"
         tools:layout="@layout/fragment_results">
         <action
             android:id="@+id/action_resultsFragment_to_navigation_home"
@@ -51,6 +55,18 @@
         <action
             android:id="@+id/action_resultsFragment_to_analysisFragment"
             app:destination="@id/analysisFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/historyItemFragment"
+        android:name="com.example.fypapp.ui.history.HistoryItemFragment"
+        android:label="@string/title_results"
+        tools:layout="@layout/fragment_history_item" >
+        <action
+            android:id="@+id/action_historyItemFragment_to_navigation_history"
+            app:destination="@id/navigation_history" />
+        <argument
+            android:name="currentResult"
+            app:argType="com.example.fypapp.data.GraphResult" />
     </fragment>
 
 </navigation>

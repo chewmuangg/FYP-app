@@ -1,11 +1,14 @@
 package com.example.fypapp.data
 
 import android.graphics.Bitmap
+import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.github.mikephil.charting.data.Entry
+import kotlinx.android.parcel.Parcelize
 
+@Parcelize
 @Entity(tableName = "graph_results_table")
 data class GraphResult(
 
@@ -17,4 +20,4 @@ data class GraphResult(
     @ColumnInfo(name = "saturation_dataset") val satDataset: ArrayList<Entry>,
     @ColumnInfo(name = "value_dataset") val valDataset: ArrayList<Entry>
 
-    )
+    ): Parcelable

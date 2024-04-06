@@ -47,7 +47,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/textDateTime"
                 tools:text="dye colour" />
 
-            <ImageView
+            <!--<ImageView
                 android:id="@+id/image"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -55,7 +55,7 @@
                 app:bitmap="@{graphResult.image}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/imgIcon"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent" />-->
 
             <ImageView
                 android:id="@+id/imgIcon"

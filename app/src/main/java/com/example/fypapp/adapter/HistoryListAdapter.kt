@@ -4,10 +4,12 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.fypapp.R
 import com.example.fypapp.data.GraphResult
 import com.example.fypapp.databinding.HistoryListItemBinding
+import com.example.fypapp.ui.history.HistoryFragmentDirections
 
 class HistoryListAdapter (private var graphResultList: List<GraphResult>) : RecyclerView.Adapter<HistoryListAdapter.ItemViewHolder>() {
 
@@ -51,7 +53,11 @@ class HistoryListAdapter (private var graphResultList: List<GraphResult>) : Recy
         // Set an onClickListener for each HistoryList Item view to navigate to its
         // detailed information page
         holder.itemView.setOnClickListener {
-            Toast.makeText(holder.itemView.context, "Pressed", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(holder.itemView.context, "Pressed", Toast.LENGTH_SHORT).show()
+
+            // Navigate to selected result item page
+            val action = HistoryFragmentDirections.actionNavigationHistoryToHistoryItemFragment(currentItem)
+            holder.itemView.findNavController().navigate(action)
         }
     }
 
