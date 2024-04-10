@@ -30,20 +30,38 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" />-->
 
+            <TextView
+                android:id="@+id/yAxisText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:layout_marginBottom="4dp"
+                android:layout_gravity="start"
+                android:textSize="12sp"
+                tools:text="Channel value" />
+
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChart"
                 android:layout_width="368dp"
                 android:layout_height="368dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="40dp" >
+                android:layout_gravity="center_horizontal" >
 
             </com.github.mikephil.charting.charts.LineChart>
+
+            <TextView
+                android:id="@+id/xAxisText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_gravity="end"
+                android:textSize="12sp"
+                tools:text="Contour No." />
 
             <TextView
                 android:id="@+id/r6gInfoText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="20dp"
                 android:text="@string/text_r6g_cal"
                 android:visibility="gone"/>
 
@@ -51,7 +69,7 @@
                 android:id="@+id/results_scrollView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="24dp"
                 android:visibility="gone">
 
                 <androidx.recyclerview.widget.RecyclerView

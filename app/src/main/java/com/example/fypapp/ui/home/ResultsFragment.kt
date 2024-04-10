@@ -92,6 +92,19 @@ class ResultsFragment : Fragment() {
                 val resultsAdapter = ResultsAdapter(resultsList)
                 val resultsRecyclerView = binding.resultsRecyclerView
                 resultsRecyclerView.adapter = resultsAdapter
+
+                // Set x-Axis TextView
+                binding.xAxisText.text = getString(R.string.text_xAxis_r6g)
+
+                // Set y-Axis TextView
+                binding.yAxisText.text = getString(R.string.text_yAxis_r6g)
+
+            } else {
+                // Set x-Axis TextView
+                binding.xAxisText.text = getString(R.string.text_xAxis_resazurin)
+
+                // Set y-Axis TextView
+                binding.yAxisText.text = getString(R.string.text_yAxis_resazurin)
             }
         })
 

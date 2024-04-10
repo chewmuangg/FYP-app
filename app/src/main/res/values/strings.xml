@@ -18,6 +18,10 @@
     <string name="text_home_title">Analyse a sensor result</string>
 
     <!-- Results Page -->
+    <string name="text_xAxis_r6g">Column No.</string>
+    <string name="text_xAxis_resazurin">Contour No.</string>
+    <string name="text_yAxis_r6g">Saturation value</string>
+    <string name="text_yAxis_resazurin">Hue value</string>
     <string name="text_r6g_cal">*The average value of the 3 saturation values in each column of wells are calculated and plotted in the graph.</string>
 
 </resources>
