@@ -16,11 +16,18 @@ import com.example.fypapp.MedifyApplication
 import com.example.fypapp.R
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.SharedViewModelFactory
+import com.example.fypapp.adapter.ResultsAdapter
+import com.example.fypapp.data.ColResult
 import com.example.fypapp.data.GraphResult
 import com.example.fypapp.databinding.FragmentResultsBinding
+import com.github.mikephil.charting.components.AxisBase
+import com.github.mikephil.charting.components.LimitLine
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -33,20 +40,24 @@ class ResultsFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels() {
+    private val sharedViewModel: SharedViewModel by activityViewModels {
         SharedViewModelFactory(
             (requireActivity().application as MedifyApplication).gResultRepository
         )
     }
 
     // Declare variables
-    //private val resultsList = ArrayList<ColResult>()
+    private val resultsList = ArrayList<ColResult>()
     private var isRed: Boolean? = null
     private lateinit var image: Bitmap
+
     // Data entries for each of the H, S, V values
     private var hueData = ArrayList<Entry>()
     private var satData = ArrayList<Entry>()
     private var valData = ArrayList<Entry>()
+
+    // Limit Lines
+    private lateinit var limitLine: LimitLine
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -69,14 +80,23 @@ class ResultsFragment : Fragment() {
 
         sharedViewModel.isRed.observe(viewLifecycleOwner, Observer {
             isRed = it
+
+            if (isRed!!) {
+                // Set the R6G dye info text to be visible
+                binding.r6gInfoText.visibility = View.VISIBLE
+
+                // Set nested scrollview containing recyclerview to be visible
+                binding.resultsScrollView.visibility = View.VISIBLE
+
+                // Results in RecyclerView
+                val resultsAdapter = ResultsAdapter(resultsList)
+                val resultsRecyclerView = binding.resultsRecyclerView
+                resultsRecyclerView.adapter = resultsAdapter
+            }
         })
 
-        // Results in RecyclerView
-        /*val resultsAdapter = ResultsAdapter(resultsList)
-        val resultsRecyclerView = binding.resultsRecyclerView
-        resultsRecyclerView.adapter = resultsAdapter
 
-        var colNum = 1
+        /*var colNum = 1
 
         sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {dataList ->
             // Loop through the dataList List and map to the respective attribute in the ColResult data class
@@ -102,12 +122,13 @@ class ResultsFragment : Fragment() {
         // HSV value analysis
         // LineChart
         val lineChart = binding.lineChart
-        var count = 0f
+        var count = 1f
 
         // observe the intensityValues LiveData
         sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer { dataList ->
 
             if (isRed!!) {
+                // R6G dye
                 // Extract the Saturation values only
                 val satList = ArrayList<Double>()
 
@@ -116,6 +137,7 @@ class ResultsFragment : Fragment() {
                     satList.add(satValue)
                 }
 
+                // TODO: catch error here when data list not in multiples of 3
                 // Loop through the dataList List and map to the respective attribute in the ColResult data class
                 for (i in satList.indices step 3) {
                     // Every 3 values becomes one group
@@ -127,13 +149,19 @@ class ResultsFragment : Fragment() {
                     // Calculate the average of the 3 values
                     val average = (value1 + value2 + value3) / 3
 
+                    // Add average saturation values to satData array
                     satData.add(Entry(count, average.toFloat()))
+
+                    // Add the data array of ColResult into resultList
+                    resultsList.add(ColResult(count.toInt().toString(), String.format("%.5f", average), value1.toString(), value2.toString(), value3.toString()))
 
                     count++
 
                 }
 
             } else {
+                // Resazurin dye
+                // Extract hue data only
                 for (data in dataList) {
                     val hueValue = data.`val`[0]
                     val satValue = data.`val`[1]
@@ -143,8 +171,8 @@ class ResultsFragment : Fragment() {
 
                     // add the data values into the ArrayList<Entry> of hueData, satData & valData respectively
                     hueData.add(Entry(count, hueValue.toFloat()))
-                    satData.add(Entry(count, satValue.toFloat()))
-                    valData.add(Entry(count, valValue.toFloat()))
+                    //satData.add(Entry(count, satValue.toFloat()))
+                    //valData.add(Entry(count, valValue.toFloat()))
 
                     count++
                 }
@@ -160,7 +188,57 @@ class ResultsFragment : Fragment() {
 //            Log.d("Debug Sat Data", "Saturation Data: $satData")
 //            Log.d("Debug Val Data", "Value Data: $valData")
 
+            // Disable description label
+            lineChart.description.isEnabled = false
 
+            // Set pinch zoom
+            lineChart.setPinchZoom(true)
+
+            // x-axis
+            val xAxis = lineChart.xAxis
+            xAxis.position = XAxis.XAxisPosition.BOTTOM     // Set x-axis to bottom of graph
+            xAxis.enableGridDashedLine(10f, 10f,0f)
+            // Customise x-Axis Labels
+            xAxis.valueFormatter = object : ValueFormatter() {
+                override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+                    return value.toInt().toString()
+                }
+            }
+
+            // y-axis (left)
+            val yAxis = lineChart.axisLeft
+            yAxis.removeAllLimitLines()
+            yAxis.enableGridDashedLine(10f, 10f,0f)
+
+            // Disable the y-axis on the right
+            lineChart.axisRight.isEnabled = false
+
+            // Customise graph according to the different dyes
+            if (isRed!!) {
+                // R6G Dye
+                // Set Label Count to 5
+                xAxis.setLabelCount(5, true)
+
+                // Declare limit lines to indicate above threshold value is bad
+                limitLine = LimitLine(223f, "Threshold")
+
+            } else {
+                // Resazurin Dye
+                // Set Label Count to 15
+                xAxis.setLabelCount(15, true)
+
+                // Declare limit lines to indicate below threshold value is bad
+                limitLine = LimitLine(128f, "Threshold")
+            }
+
+            // Add limitline to y-axis
+            limitLine.lineWidth = 4f
+            limitLine.enableDashedLine(10f, 10f, 0f)
+            limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
+            limitLine.textSize = 10f
+            yAxis.addLimitLine(limitLine)
+
+            // Set data to plot the line graph
             val hueDataSet = LineDataSet(hueData, "Hue")
             hueDataSet.color = Color.BLUE
 

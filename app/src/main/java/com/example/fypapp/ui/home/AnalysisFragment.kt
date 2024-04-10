@@ -114,12 +114,17 @@ class AnalysisFragment : Fragment() {
                 selectedImage.setImageBitmap(imageResult)
 
                 // Display the list of Intensity Values
-                sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {
+                /*sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {
                     val listText : TextView = binding.listText
                     val formattedText = it.joinToString(", ")
                     listText.text = formattedText
-                })
+                })*/
 
+                // Display number of contours
+                sharedViewModel.contourNum.observe(viewLifecycleOwner, Observer {
+                    val contourNumText = binding.textContoursNum
+                    contourNumText.text = it.toString()
+                })
 
             }
 
@@ -206,7 +211,7 @@ class AnalysisFragment : Fragment() {
             when (position) {
                 0 -> {
                     // Option: R6G Dye
-                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
+                    lowerThresholdValue = Scalar(0.0, 80.0, 25.0)
                     upperThresholdValue = Scalar(20.0, 255.0, 255.0)
 
                     isRed = true
@@ -224,6 +229,7 @@ class AnalysisFragment : Fragment() {
 
                 2 -> {
                     // Option: Others
+                    //TODO: remove option
                     isRed = false
                     isResazurin = false
                 }
@@ -288,12 +294,24 @@ class AnalysisFragment : Fragment() {
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
+        // define kernel size
+        val kernelSize = 5
+        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(kernelSize.toDouble(), kernelSize.toDouble()))
+
+        // Perform erosion to reduce noise or small objects
+        val erodedMask = Mat()
+        Imgproc.erode(thresholdMat, erodedMask, kernel)
+
+        // Perform dilation to fill gaps or expand detected regions
+        val dilatedMask = Mat()
+        Imgproc.dilate(erodedMask, dilatedMask, kernel)
+
         /* Start of contour detection */
 
         // Find contours on the resulting image
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
-        Imgproc.findContours(thresholdMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
+        Imgproc.findContours(dilatedMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
         // Log the number of contours found
         val numberOfContours = contours.size
@@ -316,16 +334,13 @@ class AnalysisFragment : Fragment() {
         // Log the number of filtered contours
         val numberOfFilteredContours = filteredContours.size
         Log.d("ContourDetection", "Number of filtered contours: $numberOfFilteredContours")
+        sharedViewModel.setContourNum(numberOfFilteredContours)
 
         // Sort the contours in filteredContours based on their their x-coordinates (from left to right)
         //filteredContours.sortWith(compareBy({ getContourCenter(it).x }, { getContourCenter(it).y}))   // sort by x-coord first, then if x-coords are the same then sort by y-coord
         if (isRed) {
             filteredContours.sortBy{ getContourCenter(it).x }
         }
-
-        // Convert the original image to greyscale for obtaining colour intensity
-        val greyMat = Mat()
-        Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
 
         // To store the values of the colour intensity of the ROIs in a list
         //val intensityValues = mutableListOf<Double>()
@@ -342,8 +357,7 @@ class AnalysisFragment : Fragment() {
             // Create a binary mask where regions inside the contour is filled with white (255) and outside remain black (0)
             Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
 
-            // Calculate the average colour intensity within the contour in the greyscale image
-            //val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+            // Calculate the average colour intensity within the contour in the hsv image
             val meanIntensity = Core.mean(hsvMat, mask)
 
             // Round the calculated value to 5d.p.
@@ -385,7 +399,8 @@ class AnalysisFragment : Fragment() {
         originalMat.release()
         hsvMat.release()
         thresholdMat.release()
-        greyMat.release()
+        erodedMask.release()
+        dilatedMask.release()
 
         return resultBitmap
     }

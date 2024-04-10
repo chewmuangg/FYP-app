@@ -24,18 +24,6 @@
                 android:layout_gravity="center_horizontal"
                 android:scaleType="fitCenter" />
 
-            <!--<androidx.core.widget.NestedScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/resultsRecyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-            </androidx.core.widget.NestedScrollView>-->
-
             <!--<TextView
                 android:id="@+id/listText"
                 android:layout_width="wrap_content"
@@ -50,6 +38,28 @@
                 android:layout_marginTop="40dp" >
 
             </com.github.mikephil.charting.charts.LineChart>
+
+            <TextView
+                android:id="@+id/r6gInfoText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:text="@string/text_r6g_cal"
+                android:visibility="gone"/>
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/results_scrollView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/resultsRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </androidx.core.widget.NestedScrollView>
 
             <LinearLayout
                 android:layout_width="match_parent"

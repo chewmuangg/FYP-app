@@ -1,4 +1,4 @@
-package com.example.fypapp.ui.notifications
+package com.example.fypapp.ui.settings
 
 import android.os.Bundle
 import android.view.LayoutInflater

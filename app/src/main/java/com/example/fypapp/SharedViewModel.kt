@@ -45,6 +45,14 @@ class SharedViewModel(private val graphResultRepository: GraphResultRepository) 
         _intensityValues.value = dataList
     }
 
+    /* Number of Contours */
+    private val _contoursNum = MutableLiveData<Int>()
+    val contourNum: LiveData<Int> = _contoursNum
+
+    fun setContourNum(contourValue: Int) {
+        _contoursNum.value = contourValue
+    }
+
 
     private val _isRed = MutableLiveData<Boolean>()
     val isRed: LiveData<Boolean> = _isRed

@@ -15,7 +15,10 @@
     <!-- Loading Dialog Fragment -->
     <string name="text_loading">Processing image. Please wait...</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- Home Page -->
+    <string name="text_home_title">Analyse a sensor result</string>
+
+    <!-- Results Page -->
+    <string name="text_r6g_cal">*The average value of the 3 saturation values in each column of wells are calculated and plotted in the graph.</string>
 
 </resources>
