@@ -27,9 +27,9 @@
 
     <fragment
         android:id="@+id/navigation_settings"
-        android:name="com.example.fypapp.ui.settings.NotificationsFragment"
+        android:name="com.example.fypapp.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_settings" />
     <fragment
         android:id="@+id/analysisFragment"
         android:name="com.example.fypapp.ui.home.AnalysisFragment"

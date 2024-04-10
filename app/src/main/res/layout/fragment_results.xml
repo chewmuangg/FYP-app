@@ -51,7 +51,7 @@
                 android:id="@+id/results_scrollView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:visibility="gone">
 
                 <androidx.recyclerview.widget.RecyclerView

@@ -227,13 +227,6 @@ class AnalysisFragment : Fragment() {
                     isRed = false
                 }
 
-                2 -> {
-                    // Option: Others
-                    //TODO: remove option
-                    isRed = false
-                    isResazurin = false
-                }
-
             }
             // Handle item selection here
             selectedItem = parent.getItemAtPosition(position).toString()

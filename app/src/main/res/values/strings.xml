@@ -9,7 +9,6 @@
     <string-array name="dyeColours">
         <item>R6G Dye </item>
         <item>Resazurin</item>
-        <item>Others</item>
     </string-array>
 
     <!-- Loading Dialog Fragment -->

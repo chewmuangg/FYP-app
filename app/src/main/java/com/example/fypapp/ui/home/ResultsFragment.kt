@@ -95,30 +95,6 @@ class ResultsFragment : Fragment() {
             }
         })
 
-
-        /*var colNum = 1
-
-        sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {dataList ->
-            // Loop through the dataList List and map to the respective attribute in the ColResult data class
-            for (i in dataList.indices step 3) {
-                // Every 3 values becomes one group
-                // Set the name of the column
-                val colName = "Test ${colNum++}"    // Test 1, Test 2, Test 3 ...
-
-                // Set the 3 individual values into value1, 2, 3 respectively
-                val value1 = dataList[i]
-                val value2 = dataList[i + 1]
-                val value3 = dataList[i + 2]
-
-                // Calculate the average of the 3 values
-                val average = (value1 + value2 + value3) / 3
-
-                // Add the data array of ColResult into resultList
-                resultsList.add(ColResult(colName, String.format("%.5f", average), value1.toString(), value2.toString(), value3.toString()))
-
-            }
-        })*/
-
         // HSV value analysis
         // LineChart
         val lineChart = binding.lineChart
@@ -152,7 +128,7 @@ class ResultsFragment : Fragment() {
                     // Add average saturation values to satData array
                     satData.add(Entry(count, average.toFloat()))
 
-                    // Add the data array of ColResult into resultList
+                    // Add the data array of ColResult into resultList to display in recyclerView
                     resultsList.add(ColResult(count.toInt().toString(), String.format("%.5f", average), value1.toString(), value2.toString(), value3.toString()))
 
                     count++

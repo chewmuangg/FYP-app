@@ -21,7 +21,7 @@
             android:id="@+id/cardLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/yellow"
+            android:background="@color/lightBlue"
             android:padding="16dp">
 
             <TextView
