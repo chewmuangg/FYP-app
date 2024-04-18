@@ -7,6 +7,11 @@ import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
+import com.example.fypapp.MedifyApplication
+import com.example.fypapp.SharedViewModel
+import com.example.fypapp.SharedViewModelFactory
 import com.example.fypapp.databinding.FragmentSettingsBinding
 
 class SettingsFragment : Fragment() {
@@ -17,9 +22,19 @@ class SettingsFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
+    // SharedViewModel
+    private val sharedViewModel: SharedViewModel by activityViewModels {
+        SharedViewModelFactory(
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
+        )
+    }
+
     // Declare variables
     private lateinit var resSeekbar: SeekBar
     private lateinit var r6gSeekbar: SeekBar
+    private var newResazurinValue: Int = 0
+    private var newR6gValue: Int = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,6 +49,18 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Assign the SharedViewModel component to a property in the binding class
+        binding.sharedViewModel = sharedViewModel
+
+        // Specify the fragment view as the lifecycle owner of the binding.
+        // This is used so that the binding can observe LiveData updates
+        binding.lifecycleOwner = viewLifecycleOwner
+
+        sharedViewModel.thresholdSettings.observe(viewLifecycleOwner, Observer { settings ->
+            newResazurinValue = settings.resazurinThreshold
+            newR6gValue = settings.r6gThreshold
+        })
 
         // Resazurin Seekbar
         resSeekbar = binding.seekBarResazurin
@@ -53,6 +80,9 @@ class SettingsFragment : Fragment() {
         // Save Button
         val saveBtn = binding.saveBtn
         saveBtn.setOnClickListener {
+            // update values
+            sharedViewModel.updateResazurinValue(newResazurinValue)
+            sharedViewModel.updateR6gValue(newR6gValue)
             viewingMode()
             Toast.makeText(requireContext(), "Changes saved!", Toast.LENGTH_SHORT).show()
         }
@@ -60,6 +90,18 @@ class SettingsFragment : Fragment() {
         // Cancel Button
         val cancelBtn = binding.cancelBtn
         cancelBtn.setOnClickListener {
+            // TODO: CANCEL CHANGES
+            sharedViewModel.thresholdSettings.observe(viewLifecycleOwner, Observer { settings ->
+                // Resazurin
+                newResazurinValue = settings.resazurinThreshold
+                binding.resThresholdVal.text = "$newResazurinValue"
+                binding.seekBarResazurin.progress = newResazurinValue
+
+                // R6G
+                newR6gValue = settings.r6gThreshold
+                binding.r6gThresholdVal.text = "$newR6gValue"
+                binding.seekBarR6G.progress = newR6gValue
+            })
             viewingMode()
         }
 
@@ -80,6 +122,40 @@ class SettingsFragment : Fragment() {
 
         // Set editLayout to gone, hide edit button
         binding.editLayout. visibility = View.GONE
+
+        // Resazurin Seekbar Listener
+        resSeekbar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
+                binding.resThresholdVal.text = progress.toString()
+                newResazurinValue = progress
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+
+        })
+
+        // R6G Seekbar Listener
+        r6gSeekbar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
+                binding.r6gThresholdVal.text = progress.toString()
+                newR6gValue = progress
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+
+        })
     }
 
     private fun viewingMode() {

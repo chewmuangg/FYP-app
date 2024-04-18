@@ -3,6 +3,7 @@ package com.example.fypapp
 import android.app.Application
 import com.example.fypapp.data.GraphResultRepository
 import com.example.fypapp.data.MedifyRoomDatabase
+import com.example.fypapp.data.ThresholdValueRepository
 
 class MedifyApplication: Application() {
 
@@ -11,5 +12,6 @@ class MedifyApplication: Application() {
 
     val database by lazy { MedifyRoomDatabase.getDatabase(this) }
     val gResultRepository by lazy { GraphResultRepository(database.graphResultDao()) }
+    val thresholdValueRepository by lazy { ThresholdValueRepository(database.thresholdValueDao()) }
 
 }

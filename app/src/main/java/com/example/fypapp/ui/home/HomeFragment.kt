@@ -43,7 +43,8 @@ class HomeFragment : Fragment() {
 
     private val sharedViewModel: SharedViewModel by activityViewModels() {
         SharedViewModelFactory(
-            (requireActivity().application as MedifyApplication).gResultRepository
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
         )
     }
 
@@ -101,6 +102,10 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // TODO: update this
+        // set isRed to null
+        //sharedViewModel.setIsRed(null)
 
         // Camera Button
         val cameraBtn : ImageButton = binding.cameraButton

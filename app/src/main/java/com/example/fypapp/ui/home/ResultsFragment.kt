@@ -42,7 +42,8 @@ class ResultsFragment : Fragment() {
 
     private val sharedViewModel: SharedViewModel by activityViewModels {
         SharedViewModelFactory(
-            (requireActivity().application as MedifyApplication).gResultRepository
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
         )
     }
 
@@ -58,6 +59,8 @@ class ResultsFragment : Fragment() {
 
     // Limit Lines
     private lateinit var limitLine: LimitLine
+    private var resazurinThreshold: Float = 0f
+    private var r6gThreshold: Float = 0f
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -202,30 +205,36 @@ class ResultsFragment : Fragment() {
             // Disable the y-axis on the right
             lineChart.axisRight.isEnabled = false
 
-            // Customise graph according to the different dyes
-            if (isRed!!) {
-                // R6G Dye
-                // Set Label Count to 5
-                xAxis.setLabelCount(5, true)
+            // Threshold value for limitline
+            sharedViewModel.thresholdSettings.observe(viewLifecycleOwner, Observer { settings ->
+                resazurinThreshold = settings.resazurinThreshold.toFloat()
+                r6gThreshold = settings.r6gThreshold.toFloat()
 
-                // Declare limit lines to indicate above threshold value is bad
-                limitLine = LimitLine(223f, "Threshold")
+                // Customise graph according to the different dyes
+                if (isRed!!) {
+                    // R6G Dye
+                    // Set Label Count to 5
+                    xAxis.setLabelCount(5, true)
 
-            } else {
-                // Resazurin Dye
-                // Set Label Count to 15
-                xAxis.setLabelCount(15, true)
+                    // Declare limit lines to indicate above threshold value is bad
+                    limitLine = LimitLine(r6gThreshold, "Threshold")
 
-                // Declare limit lines to indicate below threshold value is bad
-                limitLine = LimitLine(128f, "Threshold")
-            }
+                } else {
+                    // Resazurin Dye
+                    // Set Label Count to 15
+                    xAxis.setLabelCount(15, true)
 
-            // Add limitline to y-axis
-            limitLine.lineWidth = 4f
-            limitLine.enableDashedLine(10f, 10f, 0f)
-            limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
-            limitLine.textSize = 10f
-            yAxis.addLimitLine(limitLine)
+                    // Declare limit lines to indicate below threshold value is bad
+                    limitLine = LimitLine(128f, "Threshold")
+                }
+
+                // Add limitline to y-axis
+                limitLine.lineWidth = 4f
+                limitLine.enableDashedLine(10f, 10f, 0f)
+                limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
+                limitLine.textSize = 10f
+                yAxis.addLimitLine(limitLine)
+            })
 
             // Set data to plot the line graph
             val hueDataSet = LineDataSet(hueData, "Hue")

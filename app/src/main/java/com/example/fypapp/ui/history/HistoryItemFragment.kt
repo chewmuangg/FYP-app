@@ -2,6 +2,7 @@ package com.example.fypapp.ui.history
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -37,7 +38,8 @@ class HistoryItemFragment : Fragment() {
 
     private val sharedViewModel: SharedViewModel by activityViewModels {
         SharedViewModelFactory(
-            (requireActivity().application as MedifyApplication).gResultRepository
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
         )
     }
 
@@ -51,6 +53,9 @@ class HistoryItemFragment : Fragment() {
 
     // Limit Lines
     private lateinit var limitLine: LimitLine
+    private var resazurinThreshold: Float = 0f
+    private var r6gThreshold: Float = 0f
+    private val testVal: Int = 130
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -87,13 +92,26 @@ class HistoryItemFragment : Fragment() {
             val resultsAdapter = ResultsAdapter(resultsList)
             val resultsRecyclerView = binding.resultsRecyclerView
             resultsRecyclerView.adapter = resultsAdapter
+
+            // Set x-Axis TextView
+            binding.xAxisText.text = getString(R.string.text_xAxis_r6g)
+
+            // Set y-Axis TextView
+            binding.yAxisText.text = getString(R.string.text_yAxis_r6g)
+        } else {
+            // For Resazurin
+            // Set x-Axis TextView
+            binding.xAxisText.text = getString(R.string.text_xAxis_resazurin)
+
+            // Set y-Axis TextView
+            binding.yAxisText.text = getString(R.string.text_yAxis_resazurin)
         }
 
         /* Plot LineChart */
         // LineChart data values
         hueData = args.currentResult.hueDataset
         satData = args.currentResult.satDataset
-        valData = args.currentResult.valDataset
+        //valData = args.currentResult.valDataset
 
         val lineChart = binding.lineChart
 
@@ -122,30 +140,37 @@ class HistoryItemFragment : Fragment() {
         // Disable the y-axis on the right
         lineChart.axisRight.isEnabled = false
 
-        // Customise graph according to the different dyes
-        if (args.currentResult.dyeColour == "R6G Dye") {
-            // R6G Dye
-            // Set Label Count to 5
-            xAxis.setLabelCount(5, true)
+        sharedViewModel.thresholdSettings.observe(viewLifecycleOwner, Observer { settings ->
+            resazurinThreshold = settings.resazurinThreshold.toFloat()
+            r6gThreshold = settings.r6gThreshold.toFloat()
 
-            // Declare limit lines to indicate above threshold value is bad
-            limitLine = LimitLine(223f, "Threshold")
+            Log.d("Debug_values", "$resazurinThreshold & $r6gThreshold")
 
-        } else {
-            // Resazurin Dye
-            // Set Label Count to 15
-            xAxis.setLabelCount(15, true)
+            // Customise graph according to the different dyes
+            if (args.currentResult.dyeColour == "R6G Dye") {
+                // R6G Dye
+                // Set Label Count to 5
+                xAxis.setLabelCount(5, true)
 
-            // Declare limit lines to indicate below threshold value is bad
-            limitLine = LimitLine(128f, "Threshold")
-        }
+                // Declare limit lines to indicate above threshold value is bad
+                limitLine = LimitLine(r6gThreshold, "Threshold")
 
-        // Add limitline to y-axis
-        limitLine.lineWidth = 4f
-        limitLine.enableDashedLine(10f, 10f, 0f)
-        limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
-        limitLine.textSize = 10f
-        yAxis.addLimitLine(limitLine)
+            } else {
+                // Resazurin Dye
+                // Set Label Count to 15
+                xAxis.setLabelCount(15, true)
+
+                // Declare limit lines to indicate below threshold value is bad
+                limitLine = LimitLine(resazurinThreshold, "Threshold")
+            }
+
+            // Add limitline to y-axis
+            limitLine.lineWidth = 4f
+            limitLine.enableDashedLine(10f, 10f, 0f)
+            limitLine.labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
+            limitLine.textSize = 10f
+            yAxis.addLimitLine(limitLine)
+        })
 
 
         val hueDataSet = LineDataSet(hueData, "Hue")
@@ -157,6 +182,10 @@ class HistoryItemFragment : Fragment() {
 
         val lineData = LineData(hueDataSet, satDataSet, valDataSet)
         lineChart.data = lineData
+
+    }
+
+    private fun generateResultListData() {
 
     }
 

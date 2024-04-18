@@ -25,7 +25,8 @@ class HistoryFragment : Fragment() {
 
     private val sharedViewModel: SharedViewModel by activityViewModels() {
         SharedViewModelFactory(
-            (requireActivity().application as MedifyApplication).gResultRepository
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
         )
     }
 

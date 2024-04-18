@@ -5,10 +5,16 @@ import android.net.Uri
 import androidx.lifecycle.*
 import com.example.fypapp.data.GraphResult
 import com.example.fypapp.data.GraphResultRepository
+import com.example.fypapp.data.ThresholdValue
+import com.example.fypapp.data.ThresholdValueRepository
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.opencv.core.Scalar
 
-class SharedViewModel(private val graphResultRepository: GraphResultRepository) : ViewModel() {
+class SharedViewModel(
+    private val graphResultRepository: GraphResultRepository,
+    private val thresholdValueRepository: ThresholdValueRepository
+) : ViewModel() {
 
     /* Image Uri */
     // To get the Captured/Selected Image Uri from Home Fragment in Analysis Fragment
@@ -61,8 +67,13 @@ class SharedViewModel(private val graphResultRepository: GraphResultRepository) 
         _isRed.value = state
     }
 
+    /* Threshold Value */
+    private val _thresholdSettings = MutableLiveData<ThresholdValue>()
+    val thresholdSettings: LiveData<ThresholdValue> = _thresholdSettings
+
     /* Database */
 
+    /* GraphResult */
     // Retrieve all GraphResults from database
     val allGraphResult: LiveData<List<GraphResult>> = graphResultRepository.allResults.asLiveData()
 
@@ -77,15 +88,49 @@ class SharedViewModel(private val graphResultRepository: GraphResultRepository) 
     // Delete the specific GraphResult
 
 
+    /* ThresholdValue */
+    // Initialise Threshold settings upon app launch
+    private val id = 1
+    fun initThresholdSettings() {
+        viewModelScope.launch {
+            val existingSettings = thresholdValueRepository.getThresholdValue(id = id)
+            val isExists = thresholdValueRepository.getDataCount()
+            if (isExists == 0) {
+                // No data in threshold_value_table
+                // Create new (default) ThresholdValue and save to database
+                val defaultThreshold = ThresholdValue()
+                thresholdValueRepository.insertThreshold(defaultThreshold)
+                _thresholdSettings.value = defaultThreshold
+            } else {
+                // There is data in threshold_value_table
+                existingSettings.collect{
+                    // retrieve the existing settings and set as the current setting
+                    _thresholdSettings.value = it
+                }
+            }
+        }
+    }
+
+    // Function to update resazurin_threshold value in threshold_value_table
+    fun updateResazurinValue(value: Int) = viewModelScope.launch {
+        thresholdValueRepository.updateResazurin(value)
+    }
+
+    // Function to update r6g_threshold value in threshold_value_table
+    fun updateR6gValue(value: Int) = viewModelScope.launch {
+        thresholdValueRepository.updateR6g(value)
+    }
+
 }
 
 class SharedViewModelFactory(
-    private val graphResultRepository: GraphResultRepository
+    private val graphResultRepository: GraphResultRepository,
+    private val thresholdValueRepository: ThresholdValueRepository
 ): ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SharedViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SharedViewModel(graphResultRepository) as T
+            return SharedViewModel(graphResultRepository, thresholdValueRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
