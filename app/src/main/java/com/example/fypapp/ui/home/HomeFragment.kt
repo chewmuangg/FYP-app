@@ -22,9 +22,11 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.example.fypapp.MedifyApplication
 import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.R
+import com.example.fypapp.SharedViewModelFactory
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -39,7 +41,12 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels() {
+        SharedViewModelFactory(
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
+        )
+    }
 
     // Request codes for camera and gallery permissions
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001
@@ -87,21 +94,18 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)
-
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textHome
-        homeViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // TODO: update this
+        // set isRed to null
+        //sharedViewModel.setIsRed(null)
 
         // Camera Button
         val cameraBtn : ImageButton = binding.cameraButton

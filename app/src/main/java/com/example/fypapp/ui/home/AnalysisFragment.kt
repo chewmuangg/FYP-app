@@ -15,8 +15,10 @@ import android.widget.*
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.example.fypapp.MedifyApplication
 import com.example.fypapp.R
 import com.example.fypapp.SharedViewModel
+import com.example.fypapp.SharedViewModelFactory
 import com.example.fypapp.databinding.FragmentAnalysisBinding
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -34,7 +36,12 @@ class AnalysisFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val sharedViewModel: SharedViewModel by activityViewModels() {
+        SharedViewModelFactory(
+            (requireActivity().application as MedifyApplication).gResultRepository,
+            (requireActivity().application as MedifyApplication).thresholdValueRepository
+        )
+    }
 
     // Declare variables
     private var selectedItem: String = ""
@@ -46,6 +53,7 @@ class AnalysisFragment : Fragment() {
     private lateinit var imageResult: Bitmap
     private var hasProcessed: Boolean = false
     private var isRed: Boolean = false
+    private var isResazurin: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,14 +98,12 @@ class AnalysisFragment : Fragment() {
                 // No Dye Colour selection
                 Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-            }
+            } else if (selectedItem == "Others") {
+                // "Others" is selected
+                Toast.makeText(requireContext(), "This option is currently unavailable. Please select another option.", Toast.LENGTH_SHORT).show()
 
-            if (!isRed) {
-                // Red Dye is not selected
-                Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
-
-            } else {
-                // Red Dye is selected
+            } else if (isRed || isResazurin) {
+                // R6G or Resazurin is selected
                 // Call the Image Processing function
                 imageResult = processImage(bitmap, lowerThresholdValue, upperThresholdValue)!!
                 hasProcessed = true
@@ -109,9 +115,18 @@ class AnalysisFragment : Fragment() {
                 selectedImage.setImageBitmap(imageResult)
 
                 // Display the list of Intensity Values
-                /*val listText : TextView = binding.listText
-                val formattedText = meanIntensityList.joinToString(", ")
-                listText.text = formattedText*/
+                /*sharedViewModel.intensityValues.observe(viewLifecycleOwner, Observer {
+                    val listText : TextView = binding.listText
+                    val formattedText = it.joinToString(", ")
+                    listText.text = formattedText
+                })*/
+
+                // Display number of contours
+                sharedViewModel.contourNum.observe(viewLifecycleOwner, Observer {
+                    val contourNumText = binding.textContoursNum
+                    contourNumText.text = it.toString()
+                })
+
             }
 
         }
@@ -130,22 +145,19 @@ class AnalysisFragment : Fragment() {
 
             // Run processImage Function if not yet ran
             if (!hasProcessed) {
+                // Check if a Dye option has been selected
                 if (selectedItem.isEmpty()) {
                     // No Dye Colour selection
                     Toast.makeText(requireContext(), "Please select a dye colour!", Toast.LENGTH_SHORT).show()
 
-                }
+                } else if (isRed || isResazurin) {
 
-                if (!isRed) {
-                    // Red Dye is not selected
-                    Toast.makeText(requireContext(), "Please select the 'Orange (0.1 – 10 mM)' option.", Toast.LENGTH_SHORT).show()
-
-                } else {
                     imageResult = processImage(bitmap, lowerThresholdValue,upperThresholdValue)!!
 
                     hasProcessed = true
 
                     sharedViewModel.setProcessedBitmap(imageResult)
+                    sharedViewModel.setIsRed(isRed)
 
                     // Show the loading dialog
                     val loadingDialog = showLoadingDialog(requireContext())
@@ -158,7 +170,27 @@ class AnalysisFragment : Fragment() {
                         // Navigate to the Results Fragment page after the delay
                         findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
                     }, delayMillis)
+
+                } else if (selectedItem == "Others") {
+                    // "Others" is selected
+                    Toast.makeText(requireContext(), "This option is currently unavailable. Please select another option.", Toast.LENGTH_SHORT).show()
                 }
+
+            } else {
+                sharedViewModel.setProcessedBitmap(imageResult)
+                sharedViewModel.setIsRed(isRed)
+
+                // Show the loading dialog
+                val loadingDialog = showLoadingDialog(requireContext())
+
+                // post a delayed action to the handler
+                handler.postDelayed({
+                    // Dismiss the loading dialog after the delay
+                    loadingDialog.dismiss()
+
+                    // Navigate to the Results Fragment page after the delay
+                    findNavController().navigate(R.id.action_analysisFragment_to_resultsFragment)
+                }, delayMillis)
             }
 
 
@@ -179,43 +211,27 @@ class AnalysisFragment : Fragment() {
         colourDropdown.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             when (position) {
                 0 -> {
-                    // Option: Orange (0.1 – 10 mM)
-                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
+                    // Option: R6G Dye
+                    lowerThresholdValue = Scalar(0.0, 80.0, 25.0)
                     upperThresholdValue = Scalar(20.0, 255.0, 255.0)
+
                     isRed = true
+                    isResazurin = false
                 }
 
                 1 -> {
-                    // Option: Orange (0.025 – 0.5 mM)
-                    lowerThresholdValue = Scalar(0.0, 100.0, 60.0)
-                    upperThresholdValue = Scalar(20.0, 255.0, 255.0)
-                }
+                    // Option: Resazurin
+                    lowerThresholdValue = Scalar(100.0, 50.0, 25.0)
+                    upperThresholdValue = Scalar(155.0, 255.0, 255.0)
 
-                2 -> {
-                    // Option: Yellow (0.1 – 10 mM)
-                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
-                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
-                }
-
-                3 -> {
-                    // Option: Yellow (0.025 – 0.5 mM)
-                    lowerThresholdValue = Scalar(20.0, 75.0, 25.0)
-                    upperThresholdValue = Scalar(35.0, 255.0, 255.0)
-                }
-
-                4 -> {
-                    // Option: Others
-                }
-
-                else -> {
-                    // Handle other clicks
-
+                    isResazurin = true
+                    isRed = false
                 }
 
             }
             // Handle item selection here
             selectedItem = parent.getItemAtPosition(position).toString()
-            Toast.makeText(requireContext(), "dye colour: " + selectedItem, Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "$selectedItem is selected to analyse", Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -272,12 +288,24 @@ class AnalysisFragment : Fragment() {
         val thresholdMat = Mat()
         Core.inRange(hsvMat, lowerThreshold, upperThreshold, thresholdMat)
 
-        /* Start of contour detection that kinda works */
+        // define kernel size
+        val kernelSize = 5
+        val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(kernelSize.toDouble(), kernelSize.toDouble()))
+
+        // Perform erosion to reduce noise or small objects
+        val erodedMask = Mat()
+        Imgproc.erode(thresholdMat, erodedMask, kernel)
+
+        // Perform dilation to fill gaps or expand detected regions
+        val dilatedMask = Mat()
+        Imgproc.dilate(erodedMask, dilatedMask, kernel)
+
+        /* Start of contour detection */
 
         // Find contours on the resulting image
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
-        Imgproc.findContours(thresholdMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
+        Imgproc.findContours(dilatedMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
         // Log the number of contours found
         val numberOfContours = contours.size
@@ -300,17 +328,17 @@ class AnalysisFragment : Fragment() {
         // Log the number of filtered contours
         val numberOfFilteredContours = filteredContours.size
         Log.d("ContourDetection", "Number of filtered contours: $numberOfFilteredContours")
+        sharedViewModel.setContourNum(numberOfFilteredContours)
 
         // Sort the contours in filteredContours based on their their x-coordinates (from left to right)
         //filteredContours.sortWith(compareBy({ getContourCenter(it).x }, { getContourCenter(it).y}))   // sort by x-coord first, then if x-coords are the same then sort by y-coord
-        filteredContours.sortBy{ getContourCenter(it).x }
-
-        // Convert the original image to greyscale for obtaining colour intensity
-        val greyMat = Mat()
-        Imgproc.cvtColor(originalMat, greyMat, Imgproc.COLOR_RGB2GRAY)
+        if (isRed) {
+            filteredContours.sortBy{ getContourCenter(it).x }
+        }
 
         // To store the values of the colour intensity of the ROIs in a list
-        val intensityValues = mutableListOf<Double>()
+        //val intensityValues = mutableListOf<Double>()
+        val intensityValues = mutableListOf<Scalar>()
 
         // Visualise and numbering the filtered contours on the binary image
         val contourImage = originalMat.clone()
@@ -323,14 +351,14 @@ class AnalysisFragment : Fragment() {
             // Create a binary mask where regions inside the contour is filled with white (255) and outside remain black (0)
             Imgproc.drawContours(mask, listOf(contour), -1, Scalar(255.0), -1)
 
-            // Calculate the average colour intensity within the contour in the greyscale image
-            val meanIntensity = Core.mean(greyMat, mask).`val`[0]
+            // Calculate the average colour intensity within the contour in the hsv image
+            val meanIntensity = Core.mean(hsvMat, mask)
 
             // Round the calculated value to 5d.p.
-            val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
+            //val roundedIntensity = String.format("%.5f", meanIntensity).toDouble()
 
             // Add the new roundedIntensity value into the intensityValues Array
-            intensityValues.add(roundedIntensity)
+            intensityValues.add(meanIntensity)
 
             // Draw the contour
             Imgproc.drawContours(contourImage, listOf(contour), -1, Scalar(0.0, 255.0, 0.0, 255.0), 4)
@@ -365,7 +393,8 @@ class AnalysisFragment : Fragment() {
         originalMat.release()
         hsvMat.release()
         thresholdMat.release()
-        greyMat.release()
+        erodedMask.release()
+        dilatedMask.release()
 
         return resultBitmap
     }
