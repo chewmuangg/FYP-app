@@ -76,7 +76,6 @@ class SettingsFragment : Fragment() {
             editingMode()
         }
 
-        // TODO: database + update threshold value live
         // Save Button
         val saveBtn = binding.saveBtn
         saveBtn.setOnClickListener {
@@ -90,7 +89,6 @@ class SettingsFragment : Fragment() {
         // Cancel Button
         val cancelBtn = binding.cancelBtn
         cancelBtn.setOnClickListener {
-            // TODO: CANCEL CHANGES
             sharedViewModel.thresholdSettings.observe(viewLifecycleOwner, Observer { settings ->
                 // Resazurin
                 newResazurinValue = settings.resazurinThreshold

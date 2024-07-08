@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +28,7 @@ import com.example.fypapp.SharedViewModel
 import com.example.fypapp.databinding.FragmentHomeBinding
 import com.example.fypapp.R
 import com.example.fypapp.SharedViewModelFactory
+import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -103,9 +105,14 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // TODO: update this
-        // set isRed to null
-        //sharedViewModel.setIsRed(null)
+        // Checks if OpenCV is successfully initialised
+        if (OpenCVLoader.initDebug()) {
+            // Success
+            Log.d("Check", "OpenCV initialisation SUCCESS")
+        } else {
+            // Failed
+            Log.d("Check", "OpenCV initialisation failed")
+        }
 
         // Camera Button
         val cameraBtn : ImageButton = binding.cameraButton

@@ -88,6 +88,7 @@ class HistoryItemFragment : Fragment() {
             // Set nested scrollview containing recyclerview to be visible
             binding.resultsScrollView.visibility = View.VISIBLE
 
+            // TODO: find a way to get the results...
             // Results in RecyclerView
             val resultsAdapter = ResultsAdapter(resultsList)
             val resultsRecyclerView = binding.resultsRecyclerView
@@ -182,10 +183,6 @@ class HistoryItemFragment : Fragment() {
 
         val lineData = LineData(hueDataSet, satDataSet, valDataSet)
         lineChart.data = lineData
-
-    }
-
-    private fun generateResultListData() {
 
     }
 
